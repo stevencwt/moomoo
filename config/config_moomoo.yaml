@@ -1,0 +1,111 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Options Bot Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+# IMPORTANT: Set mode to "paper" until ValidationReporter says GO LIVE.
+# Never change mode to "live" until 4-week paper trading validation passes ALL gates.
+# ─────────────────────────────────────────────────────────────────────────────
+
+mode: paper        # "paper" | "live"  — CHANGE ONLY AFTER VALIDATION PASSES
+
+# ── MooMoo OpenD connection ───────────────────────────────────────────────────
+moomoo:
+  host:       "127.0.0.1"
+  port:       11111
+  trade_env:  "SIMULATE"   # "SIMULATE" = paper | "REAL" = live
+  # Account IDs discovered during Phase 1 connector test
+  stock_account_id:  "565755"       # Holds the 100 TSLA shares
+  option_account_id: "4310610"      # All options orders route here
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+logging:
+  level:        "INFO"       # DEBUG | INFO | WARNING | ERROR
+  file:         "logs/bot.log"
+  max_bytes:    10485760     # 10 MB per file
+  backup_count: 5
+
+# ── Universe ──────────────────────────────────────────────────────────────────
+universe:
+  watchlist:
+    - "US.TSLA"   # Primary — 100 shares held
+
+  # Shares held override for paper trading.
+  # Since the simulator account won't show your real share positions,
+  # declare them here so covered call strategy can fire correctly.
+  # Remove or set to 0 when running live (live account queried directly).
+  shares_held:
+    "US.TSLA": 100
+
+# ── Regime detection ─────────────────────────────────────────────────────────
+regime:
+  high_vol_vix_threshold:  25.0   # VIX >= this → high_vol (no new trades)
+  bull_rsi_threshold:      55.0   # RSI >= this AND MACD > 0 → bull
+  bear_rsi_threshold:      45.0   # RSI <= this AND MACD < 0 → bear
+  macd_threshold:          0.0
+
+# ── Options parameters ────────────────────────────────────────────────────────
+options:
+  target_dte_min:           21    # Minimum days to expiry
+  target_dte_max:           45    # Maximum days to expiry
+  earnings_buffer_days:     7     # Buffer before/after earnings
+  min_open_interest:        100
+  otm_call_delta_min:       0.20
+  otm_call_delta_max:       0.35
+  spread_width_target:      10.0  # Target $10 spread width
+
+# ── Per-strategy configuration ───────────────────────────────────────────────
+strategies:
+
+  covered_call:
+    enabled:                  true
+    min_iv_rank:              30    # Only sell when IV is elevated
+    max_rsi:                  70    # Don't sell calls at extreme overbought
+    max_concurrent_positions: 2
+
+  bear_call_spread:
+    enabled:                  true
+    min_iv_rank:              35
+    min_rsi_for_spread:       45    # Don't sell calls in freefall
+    min_pct_b:                0.40
+    min_credit:               0.50
+    min_reward_risk:          0.20
+    spread_width_target:      10.0
+    max_concurrent_positions: 3
+    allowed_regimes:
+      - "bear"
+      - "neutral"
+
+# ── Portfolio-level risk controls ─────────────────────────────────────────────
+portfolio_guard:
+  max_open_positions:   6        # Total across all symbols and strategies
+  max_risk_pct:         0.05     # Max 5% of portfolio at risk per trade
+  max_total_risk_pct:   0.20     # Max 20% of portfolio at risk total
+  max_trades_per_day:   3        # Max new positions per calendar day
+  portfolio_value:      100000   # Current portfolio value — update periodically
+
+# ── Order execution ───────────────────────────────────────────────────────────
+execution:
+  fill_timeout_seconds: 60       # Max wait for limit order fill
+
+# ── Position monitoring ───────────────────────────────────────────────────────
+position_monitor:
+  check_interval_minutes: 30     # How often to check during market hours
+  max_price_failures:     3      # Alert after N consecutive price fetch failures
+  exit_rules:
+    stop_loss_multiplier:  2.0   # Close when cost = 2× credit (e.g. sold $2, close at $4)
+    take_profit_pct:       0.50  # Close when we've kept 50% of premium
+    dte_close_threshold:   21    # Always close at 21 DTE (gamma risk)
+    expired_dte_threshold: 0     # Close expired options
+
+# ── Scheduler ────────────────────────────────────────────────────────────────
+scheduler:
+  # Times in US Eastern Time (ET)
+  market_scan_time:         "09:35"    # Scan universe shortly after open
+  iv_collection_time:       "16:05"    # Collect IV after close (for IV Rank)
+  weekly_report_day:        "friday"   # Day of week for validation report
+  weekly_report_time:       "16:30"    # Time for weekly validation report
+
+# ── Validation criteria ───────────────────────────────────────────────────────
+validation:
+  min_trades:        10      # Minimum closed trades before evaluation
+  min_win_rate:      0.60    # Minimum 60% win rate
+  min_sharpe_like:   0.50    # Minimum Sharpe-like ratio

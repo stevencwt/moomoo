@@ -1,0 +1,195 @@
+
+───────────────────────────────────────────────────────
+  📋 TRADE SIGNAL  [2026-02-27 09:35]
+───────────────────────────────────────────────────────
+  Strategy  : Covered Call
+  Symbol    : US.TSLA
+  Action    : SELL TO OPEN
+
+  ── Leg ──────────────────────────────────────
+  SELL 1 US.TSLA260402C435000
+  Limit price : $10.77  (mid-price at signal time)
+  Net credit  : $10.77 / share  = $1077 / contract
+
+  ── Risk ─────────────────────────────────────
+  Max profit  : $1078  (if expires worthless)
+  Max loss    : Covered by 100 shares of US.TSLA
+  Breakeven   : $397.80  (underlying at expiry)
+  Stop loss   : Close if position costs >$21.54  (2× credit)
+  Take profit : Close if position worth <$5.38  (50% profit)
+
+  ── Context ──────────────────────────────────
+  Expiry      : 2026-04-02  (34 DTE)
+  Delta       : 0.34
+  IV Rank     : 51
+  Regime      : bear
+  Reason      : Covered call opportunity | regime=bear | IV_rank=51 | RSI=44 | %B=0.32 | strike=435.0 | delta=0.34 | DTE=34 | credit=$10.77
+───────────────────────────────────────────────────────
+
+───────────────────────────────────────────────────────
+  📋 TRADE SIGNAL  [2026-02-28 00:33]
+───────────────────────────────────────────────────────
+  Strategy  : Bear Call Spread
+  Symbol    : US.SPY
+  Action    : SELL TO OPEN
+
+  ── Spread Legs ──────────────────────────────
+  SELL 1 US.SPY260402C700000  @ $5.91
+  BUY  1 US.SPY260402C710000  @ $2.44
+  Net credit  : $3.48 / share  = $348 / contract
+
+  ── Risk ─────────────────────────────────────
+  Max profit  : $348  (if expires worthless)
+  Max loss    : $652  (if spread goes full ITM)
+  Reward/risk : 0.53×
+  Breakeven   : $703.48  (underlying at expiry)
+  Stop loss   : Close if position costs >$6.96  (2× credit)
+  Take profit : Close if position worth <$1.74  (50% profit)
+
+  ── Context ──────────────────────────────────
+  Expiry      : 2026-04-02  (33 DTE)
+  Delta       : 0.34
+  IV Rank     : 54
+  Regime      : neutral
+  Reason      : Bear call spread opportunity | regime=neutral | IV_rank=54 | RSI=49 | %B=0.41 | sell=700.0/buy=710.0 | delta=0.34 | net_credit=$3.48 | max_loss=$652 | R/R=0.53 | DTE=33
+───────────────────────────────────────────────────────
+
+───────────────────────────────────────────────────────
+  📋 TRADE SIGNAL  [2026-02-28 00:33]
+───────────────────────────────────────────────────────
+  Strategy  : Bear Call Spread
+  Symbol    : US.QQQ
+  Action    : SELL TO OPEN
+
+  ── Spread Legs ──────────────────────────────
+  SELL 1 US.QQQ260402C625000  @ $6.92
+  BUY  1 US.QQQ260402C635000  @ $3.47
+  Net credit  : $3.45 / share  = $345 / contract
+
+  ── Risk ─────────────────────────────────────
+  Max profit  : $345  (if expires worthless)
+  Max loss    : $655  (if spread goes full ITM)
+  Reward/risk : 0.53×
+  Breakeven   : $628.45  (underlying at expiry)
+  Stop loss   : Close if position costs >$6.90  (2× credit)
+  Take profit : Close if position worth <$1.73  (50% profit)
+
+  ── Context ──────────────────────────────────
+  Expiry      : 2026-04-02  (33 DTE)
+  Delta       : 0.33
+  IV Rank     : 54
+  Regime      : neutral
+  Reason      : Bear call spread opportunity | regime=neutral | IV_rank=54 | RSI=47 | %B=0.44 | sell=625.0/buy=635.0 | delta=0.33 | net_credit=$3.45 | max_loss=$655 | R/R=0.53 | DTE=33
+───────────────────────────────────────────────────────
+
+───────────────────────────────────────────────────────
+  📋 TRADE SIGNAL  [2026-02-28 00:33]
+───────────────────────────────────────────────────────
+  Strategy  : Bear Call Spread
+  Symbol    : US.AAPL
+  Action    : SELL TO OPEN
+
+  ── Spread Legs ──────────────────────────────
+  SELL 1 US.AAPL260402C280000  @ $3.70
+  BUY  1 US.AAPL260402C290000  @ $1.35
+  Net credit  : $2.35 / share  = $235 / contract
+
+  ── Risk ─────────────────────────────────────
+  Max profit  : $234  (if expires worthless)
+  Max loss    : $766  (if spread goes full ITM)
+  Reward/risk : 0.31×
+  Breakeven   : $282.35  (underlying at expiry)
+  Stop loss   : Close if position costs >$4.70  (2× credit)
+  Take profit : Close if position worth <$1.18  (50% profit)
+
+  ── Context ──────────────────────────────────
+  Expiry      : 2026-04-02  (33 DTE)
+  Delta       : 0.32
+  IV Rank     : 54
+  Regime      : neutral
+  Reason      : Bear call spread opportunity | regime=neutral | IV_rank=54 | RSI=53 | %B=0.51 | sell=280.0/buy=290.0 | delta=0.32 | net_credit=$2.35 | max_loss=$766 | R/R=0.31 | DTE=33
+───────────────────────────────────────────────────────
+
+───────────────────────────────────────────────────────
+  📋 TRADE SIGNAL  [2026-02-28 00:42]
+───────────────────────────────────────────────────────
+  Strategy  : Bear Call Spread
+  Symbol    : US.QQQ
+  Action    : SELL TO OPEN
+
+  ── Spread Legs ──────────────────────────────
+  SELL 1 US.QQQ260402C625000  @ $6.65
+  BUY  1 US.QQQ260402C635000  @ $3.31
+  Net credit  : $3.35 / share  = $335 / contract
+
+  ── Risk ─────────────────────────────────────
+  Max profit  : $334  (if expires worthless)
+  Max loss    : $666  (if spread goes full ITM)
+  Reward/risk : 0.50×
+  Breakeven   : $628.35  (underlying at expiry)
+  Stop loss   : Close if position costs >$6.70  (2× credit)
+  Take profit : Close if position worth <$1.68  (50% profit)
+
+  ── Context ──────────────────────────────────
+  Expiry      : 2026-04-02  (33 DTE)
+  Delta       : 0.32
+  IV Rank     : 55
+  Regime      : neutral
+  Reason      : Bear call spread opportunity | regime=neutral | IV_rank=55 | RSI=47 | %B=0.42 | sell=625.0/buy=635.0 | delta=0.32 | net_credit=$3.34 | max_loss=$666 | R/R=0.50 | DTE=33
+───────────────────────────────────────────────────────
+
+───────────────────────────────────────────────────────
+  📋 TRADE SIGNAL  [2026-02-28 00:42]
+───────────────────────────────────────────────────────
+  Strategy  : Bear Call Spread
+  Symbol    : US.AAPL
+  Action    : SELL TO OPEN
+
+  ── Spread Legs ──────────────────────────────
+  SELL 1 US.AAPL260402C280000  @ $3.70
+  BUY  1 US.AAPL260402C290000  @ $1.36
+  Net credit  : $2.34 / share  = $234 / contract
+
+  ── Risk ─────────────────────────────────────
+  Max profit  : $234  (if expires worthless)
+  Max loss    : $766  (if spread goes full ITM)
+  Reward/risk : 0.31×
+  Breakeven   : $282.34  (underlying at expiry)
+  Stop loss   : Close if position costs >$4.68  (2× credit)
+  Take profit : Close if position worth <$1.17  (50% profit)
+
+  ── Context ──────────────────────────────────
+  Expiry      : 2026-04-02  (33 DTE)
+  Delta       : 0.31
+  IV Rank     : 55
+  Regime      : neutral
+  Reason      : Bear call spread opportunity | regime=neutral | IV_rank=55 | RSI=53 | %B=0.51 | sell=280.0/buy=290.0 | delta=0.31 | net_credit=$2.34 | max_loss=$766 | R/R=0.31 | DTE=33
+───────────────────────────────────────────────────────
+
+───────────────────────────────────────────────────────
+  📋 TRADE SIGNAL  [2026-02-28 00:57]
+───────────────────────────────────────────────────────
+  Strategy  : Bear Call Spread
+  Symbol    : US.QQQ
+  Action    : SELL TO OPEN
+
+  ── Spread Legs ──────────────────────────────
+  SELL 1 US.QQQ260402C625000  @ $6.88
+  BUY  1 US.QQQ260402C635000  @ $3.46
+  Net credit  : $3.42 / share  = $342 / contract
+
+  ── Risk ─────────────────────────────────────
+  Max profit  : $342  (if expires worthless)
+  Max loss    : $658  (if spread goes full ITM)
+  Reward/risk : 0.52×
+  Breakeven   : $628.42  (underlying at expiry)
+  Stop loss   : Close if position costs >$6.84  (2× credit)
+  Take profit : Close if position worth <$1.71  (50% profit)
+
+  ── Context ──────────────────────────────────
+  Expiry      : 2026-04-02  (33 DTE)
+  Delta       : 0.33
+  IV Rank     : 55
+  Regime      : neutral
+  Reason      : Bear call spread opportunity | regime=neutral | IV_rank=55 | RSI=47 | %B=0.44 | sell=625.0/buy=635.0 | delta=0.33 | net_credit=$3.42 | max_loss=$658 | R/R=0.52 | DTE=33
+───────────────────────────────────────────────────────

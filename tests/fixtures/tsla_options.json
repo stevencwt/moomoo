@@ -1,0 +1,65 @@
+{
+  "option_chain": {
+    "columns": ["code", "name", "lot_size", "stock_type", "option_type", "stock_owner",
+                "strike_time", "strike_price", "suspension", "stock_id",
+                "index_option_type", "expiration_cycle", "option_standard_type",
+                "option_settlement_mode"],
+    "data": [
+      ["US.TSLA260320C410000", "TSLA 260320 410.00C", 100, "OPTION", "CALL", "US.TSLA",
+       "2026-03-20", 410.0, false, 12345, "N/A", "MONTH", "STANDARD", "PHYSICAL"],
+      ["US.TSLA260320C415000", "TSLA 260320 415.00C", 100, "OPTION", "CALL", "US.TSLA",
+       "2026-03-20", 415.0, false, 12346, "N/A", "MONTH", "STANDARD", "PHYSICAL"],
+      ["US.TSLA260320C420000", "TSLA 260320 420.00C", 100, "OPTION", "CALL", "US.TSLA",
+       "2026-03-20", 420.0, false, 12347, "N/A", "MONTH", "STANDARD", "PHYSICAL"],
+      ["US.TSLA260320C425000", "TSLA 260320 425.00C", 100, "OPTION", "CALL", "US.TSLA",
+       "2026-03-20", 425.0, false, 12348, "N/A", "MONTH", "STANDARD", "PHYSICAL"],
+      ["US.TSLA260320C430000", "TSLA 260320 430.00C", 100, "OPTION", "CALL", "US.TSLA",
+       "2026-03-20", 430.0, false, 12349, "N/A", "MONTH", "STANDARD", "PHYSICAL"],
+      ["US.TSLA260320C435000", "TSLA 260320 435.00C", 100, "OPTION", "CALL", "US.TSLA",
+       "2026-03-20", 435.0, false, 12350, "N/A", "MONTH", "STANDARD", "PHYSICAL"],
+      ["US.TSLA260320P390000", "TSLA 260320 390.00P", 100, "OPTION", "PUT",  "US.TSLA",
+       "2026-03-20", 390.0, false, 12351, "N/A", "MONTH", "STANDARD", "PHYSICAL"],
+      ["US.TSLA260320P395000", "TSLA 260320 395.00P", 100, "OPTION", "PUT",  "US.TSLA",
+       "2026-03-20", 395.0, false, 12352, "N/A", "MONTH", "STANDARD", "PHYSICAL"]
+    ]
+  },
+  "snapshots": {
+    "US.TSLA260320C425000": {
+      "code":                       "US.TSLA260320C425000",
+      "name":                       "TSLA 260320 425.00C",
+      "last_price":                 4.23,
+      "bid_price":                  4.10,
+      "ask_price":                  4.25,
+      "mid_price":                  4.175,
+      "option_delta":               0.291,
+      "option_gamma":               0.018,
+      "option_theta":              -0.416,
+      "option_vega":                0.235,
+      "option_iv":                  34.59,
+      "option_open_interest":       1250,
+      "strike_price":               425.0,
+      "expiry":                     "2026-03-20",
+      "sec_status":                 "NORMAL"
+    },
+    "US.TSLA260320C435000": {
+      "code":                       "US.TSLA260320C435000",
+      "name":                       "TSLA 260320 435.00C",
+      "last_price":                 1.82,
+      "bid_price":                  1.78,
+      "ask_price":                  1.88,
+      "mid_price":                  1.83,
+      "option_delta":               0.148,
+      "option_gamma":               0.012,
+      "option_theta":              -0.298,
+      "option_vega":                0.168,
+      "option_iv":                  33.12,
+      "option_open_interest":       890,
+      "strike_price":               435.0,
+      "expiry":                     "2026-03-20",
+      "sec_status":                 "NORMAL"
+    }
+  },
+  "expiries": ["2026-02-27", "2026-03-06", "2026-03-20", "2026-04-17"],
+  "spot_price": 410.72,
+  "atr": 15.13
+}
