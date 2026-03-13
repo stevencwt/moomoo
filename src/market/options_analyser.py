@@ -304,6 +304,212 @@ class OptionsAnalyser:
         )
         return best
 
+    # ── OTM Put Filtering (Bull Put Spread) ───────────────────────
+
+    def filter_otm_puts(
+        self,
+        chain: pd.DataFrame,
+        snapshot: pd.DataFrame,
+        spot_price: float
+    ) -> pd.DataFrame:
+        """
+        Filter option chain to OTM puts within the configured delta range.
+
+        For puts, delta is negative. The absolute value is used for comparison
+        against the configured delta_min / delta_max thresholds (0.20–0.35).
+
+        Args:
+            chain     : Option chain DataFrame (from MooMooConnector.get_option_chain)
+            snapshot  : Snapshot DataFrame with Greeks (from get_option_snapshot)
+            spot_price: Current underlying price
+
+        Returns:
+            Filtered DataFrame of qualifying OTM puts, sorted by strike descending
+            (highest strike first = closest to the money = most premium).
+        """
+        # OTM puts: strike below spot price
+        puts = chain[
+            (chain["option_type"] == "PUT") &
+            (chain["strike_price"] < spot_price)
+        ].copy()
+
+        if len(puts) == 0:
+            logger.debug("No OTM puts found in chain")
+            return pd.DataFrame()
+
+        # Merge with snapshot to get Greeks
+        if len(snapshot) > 0 and "option_delta" in snapshot.columns:
+            puts = puts.merge(
+                snapshot[["code", "option_delta", "option_open_interest",
+                           "bid_price", "ask_price", "mid_price"]].rename(
+                    columns={"option_open_interest": "open_interest"}
+                ),
+                on="code",
+                how="left"
+            )
+
+            # Put deltas are negative — compare absolute value to delta range
+            delta_filtered = puts[
+                (puts["option_delta"].abs() >= self._delta_min) &
+                (puts["option_delta"].abs() <= self._delta_max)
+            ]
+
+            if "open_interest" in delta_filtered.columns:
+                delta_filtered = delta_filtered[
+                    delta_filtered["open_interest"] >= self._min_open_interest
+                ]
+
+            if len(delta_filtered) > 0:
+                result = delta_filtered.sort_values("strike_price", ascending=False)
+                logger.debug(
+                    f"OTM puts after delta filter ({self._delta_min}-{self._delta_max}): "
+                    f"{len(result)}"
+                )
+                return result
+
+        # Fallback: no Greeks — return all OTM puts sorted by strike descending
+        logger.debug("Delta data not available — returning all OTM puts (no delta filter)")
+        return puts.sort_values("strike_price", ascending=False)
+
+    def select_best_put(self, otm_puts: pd.DataFrame) -> Optional[pd.Series]:
+        """
+        Select the best OTM put from filtered candidates.
+
+        Selection logic:
+          1. Prefer highest absolute delta within range (more premium)
+          2. Must have bid > 0 (must be tradeable)
+          3. Must meet minimum open interest
+
+        Args:
+            otm_puts: Filtered DataFrame from filter_otm_puts()
+
+        Returns:
+            Best put row as pd.Series, or None if no qualifying put found.
+        """
+        if len(otm_puts) == 0:
+            return None
+
+        candidates = otm_puts.copy()
+
+        if "bid_price" in candidates.columns:
+            candidates = candidates[candidates["bid_price"] > 0]
+
+        if len(candidates) == 0:
+            logger.debug("No OTM puts with positive bid found")
+            return None
+
+        # Sort by absolute delta descending (highest abs delta = closest to money = most premium)
+        if "option_delta" in candidates.columns:
+            candidates = candidates.sort_values(
+                "option_delta", key=lambda d: d.abs(), ascending=False
+            )
+
+        best = candidates.iloc[0]
+        logger.debug(
+            f"Best put selected: {best['code']} | "
+            f"strike={best['strike_price']} | "
+            f"delta={best.get('option_delta', 'N/A')} | "
+            f"bid={best.get('bid_price', 'N/A')}"
+        )
+        return best
+
+    def find_protective_put(
+        self,
+        sell_strike: float,
+        chain: pd.DataFrame,
+        width: Optional[float] = None
+    ) -> Optional[pd.Series]:
+        """
+        Find the protective (long) put leg for a bull put spread.
+
+        Targets a strike approximately `width` below the sell strike.
+        If exact width not available, picks nearest available strike below.
+
+        Args:
+            sell_strike: Strike price of the short put leg
+            chain      : Full option chain DataFrame
+            width      : Target spread width in dollars (uses config default if None)
+
+        Returns:
+            Best protective put row, or None if not found.
+        """
+        target_width  = width or self._spread_width_target
+        target_strike = sell_strike - target_width
+
+        puts = chain[
+            (chain["option_type"] == "PUT") &
+            (chain["strike_price"] < sell_strike)
+        ].copy()
+
+        if len(puts) == 0:
+            return None
+
+        puts["strike_dist"] = (puts["strike_price"] - target_strike).abs()
+        puts = puts.sort_values("strike_dist")
+
+        best = puts.iloc[0]
+        logger.debug(
+            f"Protective put: {best['code']} | "
+            f"strike={best['strike_price']} | "
+            f"actual_width={sell_strike - best['strike_price']:.1f}"
+        )
+        return best
+
+    def compute_put_spread_metrics(
+        self,
+        sell_strike: float,
+        buy_strike: float,
+        sell_premium: float,
+        buy_premium: float
+    ) -> Dict:
+        """
+        Compute bull put spread risk/reward metrics.
+
+        For put spreads: sell_strike > buy_strike (short put is closer to money).
+
+        Args:
+            sell_strike  : Short put strike (higher, closer to money)
+            buy_strike   : Long put strike (lower, further OTM — protection)
+            sell_premium : Credit received on short leg (per share)
+            buy_premium  : Debit paid on long leg (per share)
+
+        Returns:
+            Dict with:
+              net_credit  : Premium received per share (sell - buy)
+              max_profit  : Net credit × 100 (per contract)
+              max_loss    : (spread_width - net_credit) × 100 (per contract)
+              breakeven   : sell_strike - net_credit (underlying falls through here)
+              reward_risk : max_profit / max_loss ratio
+        """
+        if buy_strike >= sell_strike:
+            raise DataError(
+                f"buy_strike ({buy_strike}) must be < sell_strike ({sell_strike}) "
+                f"for a bull put spread"
+            )
+
+        spread_width = sell_strike - buy_strike
+        net_credit   = sell_premium - buy_premium
+        max_profit   = net_credit * 100
+        max_loss     = (spread_width - net_credit) * 100
+        breakeven    = sell_strike - net_credit    # for puts: breakeven is below sell strike
+        reward_risk  = max_profit / max_loss if max_loss > 0 else 0
+
+        metrics = {
+            "net_credit":   round(net_credit, 4),
+            "max_profit":   round(max_profit, 2),
+            "max_loss":     round(max_loss, 2),
+            "breakeven":    round(breakeven, 2),
+            "reward_risk":  round(reward_risk, 4),
+            "spread_width": round(spread_width, 2),
+        }
+
+        logger.debug(
+            f"Put spread metrics: credit=${net_credit:.2f} | "
+            f"max_profit=${max_profit:.0f} | max_loss=${max_loss:.0f} | "
+            f"R/R={reward_risk:.2f}"
+        )
+        return metrics
+
     def compute_spread_metrics(
         self,
         sell_strike: float,

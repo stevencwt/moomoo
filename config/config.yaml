@@ -8,26 +8,16 @@
 mode: paper        # "paper" | "live"  — CHANGE ONLY AFTER VALIDATION PASSES
 
 # ── Broker Configuration ─────────────────────────────────────────────────────
-# data:      connector used for market data, option chains, Greeks
-# execution: connector used for placing real orders
-#
-# Each key is independently "moomoo" or "ibkr".
-#
 # ┌─────────────────────────────────────────────────────────────────────────┐
 # │  MODE 1 — Hybrid (CURRENT): MooMoo data + IBKR execution               │
-# │    → Free market data via MooMoo OpenD                                  │
-# │    → Real orders placed in your live IBKR account (U18705798)           │
 # │    data:      "moomoo"                                                   │
 # │    execution: "ibkr"                                                     │
 # ├─────────────────────────────────────────────────────────────────────────┤
 # │  MODE 2 — Full IBKR: subscribe to US market data (~$14.50/mo)          │
-# │    → Both data and execution via IBKR                                   │
-# │    → Eliminates dependency on MooMoo OpenD                              │
 # │    data:      "ibkr"                                                     │
 # │    execution: "ibkr"                                                     │
 # ├─────────────────────────────────────────────────────────────────────────┤
 # │  MODE 3 — Full MooMoo: paper trading only (SG API limitation)          │
-# │    → Cannot access real account or place live orders                    │
 # │    data:      "moomoo"                                                   │
 # │    execution: "moomoo"                                                   │
 # └─────────────────────────────────────────────────────────────────────────┘
@@ -40,23 +30,15 @@ moomoo:
   host:       "127.0.0.1"
   port:       11111
   trade_env:  "SIMULATE"   # "SIMULATE" = paper | "REAL" = live
-  # Account IDs discovered during Phase 1 connector test
   stock_account_id:  "565755"       # Holds the 100 TSLA shares
   option_account_id: "4310610"      # All options orders route here
 
 # ── Interactive Brokers connection ────────────────────────────────────────────
-# Requires TWS or IB Gateway running with API connections enabled.
-#
 # Port reference:
 #   TWS paper trading  : 7497
 #   TWS live trading   : 7496   ← current (live account U18705798)
 #   IB Gateway paper   : 4002
 #   IB Gateway live    : 4001
-#
-# Enable in TWS: Edit → Global Config → API → Settings
-#   ✓ Enable ActiveX and Socket Clients
-#   ✓ Socket port: 7496
-#   ✓ Trusted IPs: 127.0.0.1
 ibkr:
   host:      "127.0.0.1"
   port:      7496          # Live TWS port (account U18705798)
@@ -73,14 +55,21 @@ logging:
 # ── Universe ──────────────────────────────────────────────────────────────────
 universe:
   watchlist:
-    - "US.TSLA"   # Primary — 100 shares held
+    - "US.SPY"    # S&P 500 ETF — deepest options market, massive buffer at current strikes
+    - "US.QQQ"    # Nasdaq 100 ETF — IV elevates on macro/tech news
+    - "US.AAPL"   # Perfect price range (~$225), enormous OI, regular IV cycles
+    - "US.MSFT"   # Less volatile than TSLA/NVDA — good baseline signal for comparison
+    - "US.AMZN"   # Post-split price in $10-width sweet spot, e-commerce + cloud IV mix
+    - "US.GOOGL"  # Liquid, diversified revenue, less correlated to pure-tech names
+    - "US.NVDA"   # Highest single-stock options volume, IV consistently elevated
+    - "US.TSLA"   # 100 shares held — covered call candidate + spread strategies
 
   # Shares held override for paper trading.
-  # Since the simulator account won't show your real share positions,
-  # declare them here so covered call strategy can fire correctly.
-  # Remove or set to 0 when running live (live account queried directly).
+  # The simulator account won't reflect real share positions, so declare them
+  # here so the covered call strategy fires correctly.
+  # Set to 0 (or remove) when switching to live — live account is queried directly.
   shares_held:
-    "US.TSLA": 100
+    "US.TSLA": 100   # 100 shares held — enables covered call strategy
 
 # ── Regime detection ─────────────────────────────────────────────────────────
 regime:
@@ -98,6 +87,8 @@ options:
   otm_call_delta_min:       0.20
   otm_call_delta_max:       0.35
   spread_width_target:      10.0  # Target $10 spread width
+                                  # ⚠ fixed width — see synopsis.md Section 2.4 for
+                                  #   known limitation on high-priced stocks (>$500)
 
 # ── Per-strategy configuration ───────────────────────────────────────────────
 strategies:
@@ -115,19 +106,47 @@ strategies:
     min_pct_b:                0.40
     min_credit:               0.50
     min_reward_risk:          0.20
-    spread_width_target:      10.0
+    spread_width_target:      10.0  # ⚠ fixed — see synopsis.md Section 2.4
     max_concurrent_positions: 3
     allowed_regimes:
       - "bear"
       - "neutral"
 
+  bull_put_spread:
+    enabled:                  true
+    min_iv_rank:              35
+    min_rsi_floor:            35    # Don't sell puts in freefall
+    max_rsi_ceiling:          65    # Don't sell puts at extreme overbought
+    min_pct_b:                0.20
+    min_credit:               0.50
+    min_reward_risk:          0.20
+    spread_width_target:      10.0  # ⚠ fixed — see synopsis.md Section 2.4
+    max_concurrent_positions: 3
+    allowed_regimes:
+      - "bull"
+      - "neutral"
+
 # ── Portfolio-level risk controls ─────────────────────────────────────────────
 portfolio_guard:
-  max_open_positions:   6        # Total across all symbols and strategies
+  max_open_positions:   8        # Total across all symbols and strategies (matches 8-symbol watchlist)
   max_risk_pct:         0.05     # Max 5% of portfolio at risk per trade
   max_total_risk_pct:   0.20     # Max 20% of portfolio at risk total
   max_trades_per_day:   3        # Max new positions per calendar day
   portfolio_value:      100000   # Current portfolio value — update periodically
+
+# ── Signal ranking ───────────────────────────────────────────────────────────
+# Composite score:
+#   score = (iv_rank_norm × weight_iv_rank)
+#         + (buffer_norm  × weight_buffer_pct)
+#         + (rr_norm      × weight_reward_risk)
+#
+# Each dimension is min-max normalised within the current candidate pool.
+# Adjust weights as paper trade data accumulates.
+signal_ranker:
+  enabled:             true    # false = revert to FIFO order (no ranking)
+  weight_iv_rank:      0.40    # 40% — how elevated is the premium?
+  weight_buffer_pct:   0.35    # 35% — how much buffer to the short strike?
+  weight_reward_risk:  0.25    # 25% — how efficient is the trade?
 
 # ── Order execution ───────────────────────────────────────────────────────────
 execution:
@@ -138,13 +157,8 @@ position_monitor:
   check_interval_minutes: 30     # How often to check during market hours
   max_price_failures:     3      # Alert after N consecutive price fetch failures
   exit_rules:
-    stop_loss_multiplier:  3.0   # Close when cost = 3× credit (e.g. sold $3, close at $9)
-                                 # Widened from 2x -- 2x triggers on day-1 IV spikes even when
-                                 # underlying hasn't moved. 3x still enforces a defined loss
-                                 # (spread width is the hard ceiling regardless).
-    min_days_before_stop:  5     # Don't allow stop loss in first 5 days after opening.
-                                 # Prevents IV expansion noise from stopping valid positions
-                                 # before theta decay begins to meaningfully offset vega risk.
+    stop_loss_multiplier:  3.0   # Close when cost = 3× credit (e.g. sold $2, close at $6)
+    min_days_before_stop:  5     # Don't stop before day 5 — vega noise dominates before theta kicks in
     take_profit_pct:       0.50  # Close when we've kept 50% of premium
     dte_close_threshold:   21    # Always close at 21 DTE (gamma risk)
     expired_dte_threshold: 0     # Close expired options

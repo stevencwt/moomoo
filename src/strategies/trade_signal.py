@@ -18,7 +18,7 @@ Design principles:
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 
 @dataclass(frozen=True)
@@ -56,6 +56,19 @@ class TradeSignal:
       delta          : Delta of the short leg at signal time
       reason         : Human-readable explanation of why this signal was generated
       regime         : Market regime at signal time
+
+    Ranking inputs (optional — populated by each strategy):
+      spot_price     : Underlying price at signal time
+      buffer_pct     : % distance from spot to short strike (higher = safer)
+                       bear_call_spread: (sell_strike − spot) / spot × 100
+                       bull_put_spread:  (spot − sell_strike)  / spot × 100
+                       covered_call:     (strike − spot)       / spot × 100
+
+    Entry context (optional — carried from strategy to ledger):
+      snapshot       : MarketSnapshot that triggered this signal.
+                       Passed through to PaperLedger.record_open() so that
+                       RSI, %%B, MACD, and VIX at entry are persisted.
+                       Not serialised — used only within the same process.
     """
     # Identity
     strategy_name:  str
@@ -87,6 +100,16 @@ class TradeSignal:
     delta:          float
     reason:         str
     regime:         str
+
+    # Ranking inputs (populated by each strategy at signal-generation time)
+    # Optional with defaults so existing code that omits them continues to work.
+    spot_price:     Optional[float] = None   # underlying price at signal time
+    buffer_pct:     Optional[float] = None   # % distance from spot to short strike
+                                             # bear_call: (sell_strike - spot) / spot × 100
+                                             # bull_put:  (spot - sell_strike)  / spot × 100
+                                             # covered:   (strike - spot)       / spot × 100
+    snapshot:       Optional[Any]   = None   # MarketSnapshot that triggered this signal
+                                             # forwarded to record_open() for entry context
 
     def __post_init__(self):
         valid_actions = {"OPEN", "CLOSE"}

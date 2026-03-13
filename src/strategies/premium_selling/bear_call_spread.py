@@ -59,32 +59,46 @@ class BearCallSpreadStrategy(BaseStrategy):
         # ── Gate 1: Position limit ────────────────────────────────
         max_pos = self._get_cfg("max_concurrent_positions", 3)
         if snapshot.open_positions >= max_pos:
-            self._skip(f"open_positions={snapshot.open_positions} >= max_concurrent={max_pos}")
+            self._logger.debug(
+                f"{symbol}: SKIP — open_positions={snapshot.open_positions} "
+                f">= max={max_pos}"
+            )
             return None
 
         # ── Gate 2: Regime ────────────────────────────────────────
         # Bear call spreads work in bear and neutral — avoid in pure bull (breakout risk)
         allowed_regimes = self._get_cfg("allowed_regimes", ["bear", "neutral"])
         if snapshot.market_regime not in allowed_regimes:
-            self._skip(f"regime={snapshot.market_regime} not in allowed={allowed_regimes}")
+            self._logger.debug(
+                f"{symbol}: SKIP — regime={snapshot.market_regime} "
+                f"not in allowed={allowed_regimes}"
+            )
             return None
 
         # ── Gate 3: IV Rank ───────────────────────────────────────
         min_iv_rank = self._get_cfg("min_iv_rank", 35)
         if snapshot.options_context.iv_rank < min_iv_rank:
-            self._skip(f"iv_rank={snapshot.options_context.iv_rank:.0f} < min_iv_rank={min_iv_rank}")
+            self._logger.debug(
+                f"{symbol}: SKIP — iv_rank={snapshot.options_context.iv_rank:.1f} "
+                f"< min={min_iv_rank}"
+            )
             return None
 
         # ── Gate 4: RSI floor (don't sell calls in freefall) ──────
         min_rsi = self._get_cfg("min_rsi_for_spread", 45)
         if snapshot.technicals.rsi < min_rsi:
-            self._skip(f"RSI={snapshot.technicals.rsi:.0f} < min_rsi={min_rsi} (stock in freefall)")
+            self._logger.debug(
+                f"{symbol}: SKIP — RSI={snapshot.technicals.rsi:.1f} < min={min_rsi} "
+                f"(stock in freefall — don't sell calls)"
+            )
             return None
 
         # ── Gate 5: %B floor (price needs some elevation for OTM calls to have value) ─
         min_pct_b = self._get_cfg("min_pct_b", 0.40)
         if snapshot.technicals.pct_b < min_pct_b:
-            self._skip(f"%B={snapshot.technicals.pct_b:.2f} < min_pct_b={min_pct_b}")
+            self._logger.debug(
+                f"{symbol}: SKIP — %B={snapshot.technicals.pct_b:.2f} < min={min_pct_b}"
+            )
             return None
 
         # ── Gate 6: Target expiry ─────────────────────────────────
@@ -92,19 +106,22 @@ class BearCallSpreadStrategy(BaseStrategy):
             snapshot.options_context.available_expiries
         )
         if expiry is None:
-            self._skip(f"no expiry in DTE range {self._options._dte_min}-{self._options._dte_max}d")
+            self._logger.debug(f"{symbol}: SKIP — no suitable expiry in DTE range")
             return None
 
         # ── Gate 7: Earnings conflict ─────────────────────────────
         if self._options.check_earnings_conflict(expiry, snapshot.next_earnings):
-            self._skip(f"earnings conflict: expiry={expiry} overlaps earnings={snapshot.next_earnings}")
+            self._logger.debug(
+                f"{symbol}: SKIP — earnings conflict "
+                f"(expiry={expiry}, earnings={snapshot.next_earnings})"
+            )
             return None
 
         # ── Gate 8: Find qualifying short call ───────────────────
         try:
             chain = self._moomoo.get_option_chain(symbol, expiry, "CALL")
             if len(chain) == 0:
-                self._skip(f"empty option chain for expiry={expiry}")
+                self._logger.debug(f"{symbol}: SKIP — empty option chain for {expiry}")
                 return None
 
             call_codes = chain["code"].tolist()
@@ -114,11 +131,14 @@ class BearCallSpreadStrategy(BaseStrategy):
             short_call = self._options.select_best_call(otm_calls)
 
             if short_call is None:
-                self._skip(f"no short call with delta {self._options._delta_min}-{self._options._delta_max} and OI≥{self._options._min_oi}")
+                self._logger.debug(
+                    f"{symbol}: SKIP — no qualifying short call "
+                    f"(delta {self._options._delta_min}-{self._options._delta_max})"
+                )
                 return None
 
         except Exception as e:
-            self._skip(f"error fetching option chain: {e}")
+            self._logger.warning(f"{symbol}: SKIP — error fetching option data: {e}")
             return None
 
         # ── Gate 9: Find protective long call ────────────────────
@@ -131,7 +151,10 @@ class BearCallSpreadStrategy(BaseStrategy):
             width=spread_width
         )
         if long_call is None:
-            self._skip(f"no protective long call found above short strike {sell_strike}")
+            self._logger.debug(
+                f"{symbol}: SKIP — no protective call found "
+                f"above strike {sell_strike}"
+            )
             return None
 
         # ── Gate 10: Pricing and R/R ──────────────────────────────
@@ -157,14 +180,16 @@ class BearCallSpreadStrategy(BaseStrategy):
         sell_price = float(short_call.get("mid_price", short_call.get("bid_price", 0)))
 
         if sell_price <= 0:
-            self._skip(f"sell_price={sell_price:.2f} ≤ 0 — no valid bid/ask")
+            self._logger.debug(f"{symbol}: SKIP — sell_price={sell_price} <= 0")
             return None
 
         # Minimum credit check
         net_credit = sell_price - buy_price
         min_credit = self._get_cfg("min_credit", 0.50)
         if net_credit < min_credit:
-            self._skip(f"net_credit=${net_credit:.2f} < min_credit=${min_credit:.2f}")
+            self._logger.debug(
+                f"{symbol}: SKIP — net_credit=${net_credit:.2f} < min=${min_credit}"
+            )
             return None
 
         # Compute metrics
@@ -179,7 +204,10 @@ class BearCallSpreadStrategy(BaseStrategy):
         # Minimum R/R check
         min_rr = self._get_cfg("min_reward_risk", 0.20)
         if metrics["reward_risk"] < min_rr:
-            self._skip(f"reward_risk={metrics['reward_risk']:.2f} < min_reward_risk={min_rr}")
+            self._logger.debug(
+                f"{symbol}: SKIP — reward_risk={metrics['reward_risk']:.2f} "
+                f"< min={min_rr}"
+            )
             return None
 
         # ── All gates passed — build TradeSignal ─────────────────
@@ -221,6 +249,9 @@ class BearCallSpreadStrategy(BaseStrategy):
             delta         = delta,
             reason        = reason,
             regime        = snapshot.market_regime,
+            spot_price    = round(snapshot.spot_price, 2),
+            buffer_pct    = round((sell_strike - snapshot.spot_price) / snapshot.spot_price * 100, 2),
+            snapshot      = snapshot,
         )
 
         self._logger.info(

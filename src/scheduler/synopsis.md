@@ -15,8 +15,6 @@
 11. [Going Live — Validation Gate](#11-going-live--validation-gate)
 12. [Daily Operations](#12-daily-operations)
 13. [File Structure](#13-file-structure)
-14. [Trade Context Logging](#14-trade-context-logging)
-15. [Web Dashboard](#15-web-dashboard)
 
 **Strategies covered:**
 - 2.1 Covered Call
@@ -25,11 +23,6 @@
 
 **Key subsections:**
 - 4.1 Signal Ranking & Selection *(opportunity scoring — replaces FIFO execution)*
-- 14.1 Entry Context Fields *(7 fields written to SQLite at trade open)*
-- 14.2 Exit Context Fields *(6 fields written to SQLite at trade close)*
-- 14.3 Data Flow *(how context travels from strategy → signal → ledger)*
-- 15.1 Pages & Features
-- 15.2 Running the Dashboard
 
 ---
 
@@ -236,7 +229,6 @@ For each symbol:
   9. Count open positions for this symbol (paper ledger)
  10. Assemble MarketSnapshot → pass to each strategy for evaluation
  11. Collect every qualifying signal — do NOT execute yet
-     ↳ Each signal carries the full MarketSnapshot for entry context logging
 ```
 
 **Pass 2 — Rank, select, and execute:**
@@ -247,8 +239,6 @@ For each symbol:
  14. Walk ranked list top-to-bottom:
        - Apply portfolio guard checks (risk limits, iron condor prevention, daily cap)
        - Execute approved signals until daily limit reached or pool exhausted
-       - Write full entry context to ledger at execution time (RSI, %B, MACD, VIX,
-         spot price, buffer %, reward/risk — see Section 14)
  15. Log ranked table with selection rationale
 ```
 
@@ -415,8 +405,6 @@ The gate display remains unchanged — all gates are shown for every symbol and 
 ## 5. Exit Rules & Position Management
 
 The bot checks every open position every 30 minutes during market hours. Four exit triggers are evaluated in priority order:
-
-> **Exit context is captured automatically at every close.** Days held, DTE remaining, underlying spot price, IV Rank, VIX, and percentage of premium captured are all written to the trade record at the moment of exit. See [Section 14](#14-trade-context-logging) for the full field list.
 
 ### Stop Loss — Priority 1
 Close immediately when the current option price reaches **3× the original credit collected**, provided the position has been held for at least **5 days**.
@@ -733,8 +721,6 @@ portfolio_guard:
 
 The portfolio guard is a hard firewall — signals are blocked regardless of strategy evaluation if any limit is breached. `portfolio_value` should be updated periodically to keep the percentage-based limits meaningful.
 
-**Restart safety:** `max_trades_per_day` is preserved correctly across bot restarts. On startup, `PortfolioGuard.restore_from_ledger()` calls `ledger.get_trades_opened_on(today)` to count all trades already placed today (including those subsequently stopped out or closed) and restores `_trades_today` before any new scan runs. See [Section 14.7](#147-paperledger-query-method-reference) for details.
-
 ---
 
 ### `signal_ranker`
@@ -1039,22 +1025,6 @@ cd /path/to/moomoo
 python3 main.py
 ```
 
-### Starting the dashboard
-
-```bash
-# In a separate terminal — reads the same paper_trades.db the bot writes to
-cd /path/to/moomoo
-python3 dashboard.py
-
-# Custom port or DB path
-python3 dashboard.py --port 8080
-python3 dashboard.py --db data/paper_trades.db
-
-# → Open http://127.0.0.1:5000 in your browser
-```
-
-The dashboard auto-refreshes every 60 seconds. It can run while the bot is active — reads are non-blocking (SQLite WAL mode). See [Section 15](#15-web-dashboard) for a full description of all pages.
-
 ### Checking current status
 
 ```bash
@@ -1120,7 +1090,7 @@ moomoo/
 │   ├── strategies/
 │   │   ├── base_strategy.py         ← abstract base class
 │   │   ├── strategy_registry.py     ← manages list of active strategies
-│   │   ├── trade_signal.py          ← signal data class (carries MarketSnapshot)
+│   │   ├── trade_signal.py          ← signal data class
 │   │   └── premium_selling/
 │   │       ├── covered_call.py      ← covered call strategy
 │   │       ├── bear_call_spread.py  ← bear call spread strategy (upside premium)
@@ -1131,11 +1101,11 @@ moomoo/
 │   │   ├── portfolio_guard.py       ← position limits, risk checks
 │   │   ├── signal_ranker.py         ← scores and ranks candidates before execution
 │   │   ├── trade_manager.py         ← orchestrates guard → router → ledger
-│   │   └── paper_ledger.py          ← SQLite trade journal (entry + exit context)
+│   │   └── paper_ledger.py          ← SQLite trade journal
 │   │
 │   ├── monitoring/
 │   │   ├── exit_evaluator.py        ← stop loss, take profit, DTE rules
-│   │   ├── position_monitor.py      ← runs exit checks every 30 min; writes exit context
+│   │   ├── position_monitor.py      ← runs exit checks every 30 min
 │   │   └── validation_reporter.py   ← weekly go-live gate report
 │   │
 │   ├── notifier/
@@ -1145,8 +1115,7 @@ moomoo/
 │   └── scheduler/
 │       └── bot_scheduler.py         ← event loop, wires all components
 │
-├── dashboard.py                     ← single-file Flask dashboard (port 5000)
-├── tests/                           ← 547 unit tests across all phases
+├── tests/                           ← 407 unit tests across 8 phases + signal_ranker suite (pending)
 ├── data/                            ← SQLite ledger + IV history + reports
 └── logs/                            ← rotating log files
 ```
@@ -1176,336 +1145,3 @@ moomoo/
 | Switch to full IBKR | `broker.data: "ibkr"` and `broker.execution: "ibkr"` |
 | Go live | `mode: live` (only after validation report passes) |
 | Pause all new trades | `regime.high_vol_vix_threshold: 0` (always high_vol) |
-| Start the web dashboard | `python3 dashboard.py` → http://127.0.0.1:5000 |
-| Run dashboard on a custom port | `python3 dashboard.py --port 8080` |
-| Point dashboard at a specific DB | `python3 dashboard.py --db path/to/paper_trades.db` |
-
----
-
-## 14. Trade Context Logging
-
-Every trade written to `paper_trades.db` carries two groups of contextual fields — entry context (captured when the trade opens) and exit context (captured when it closes). These fields enable post-hoc analysis of which market conditions led to winning vs losing trades, without relying on memory or separate logs.
-
-### 14.1 Entry Context Fields
-
-Captured at `record_open()` and written atomically with the trade record. All fields default to `NULL` if the `MarketSnapshot` is unavailable (backward compatible with trades opened before this feature).
-
-| Column | Type | Description |
-|---|---|---|
-| `spot_price_at_open` | REAL | Underlying price at signal time |
-| `buffer_pct` | REAL | % distance from spot to short strike (see formula by strategy below) |
-| `reward_risk` | REAL | Net credit ÷ max loss — trade efficiency ratio |
-| `rsi_at_open` | REAL | RSI(14) value at time of entry |
-| `pct_b_at_open` | REAL | Bollinger %B at entry (0.0 = lower band, 1.0 = upper band) |
-| `macd_at_open` | REAL | MACD line value at entry (can be negative) |
-| `vix_at_open` | REAL | VIX index at entry (e.g. 18.4) |
-
-**Buffer formula by strategy:**
-
-```
-Bear call spread:  buffer_pct = (short_call_strike − spot) / spot × 100
-Bull put spread:   buffer_pct = (spot − short_put_strike) / spot × 100
-Covered call:      buffer_pct = (short_call_strike − spot) / spot × 100
-```
-
-A buffer of 4.5% on a bear call spread means the underlying must rise 4.5% from entry before the short strike is threatened.
-
-### 14.2 Exit Context Fields
-
-Captured at `record_close()` by `PositionMonitor`. Fields are individually wrapped in try/except — a VIX network failure at exit time does not abort the close; it simply leaves that field as `NULL`.
-
-| Column | Type | Description |
-|---|---|---|
-| `days_held` | INTEGER | Calendar days from `opened_at` to `closed_at` (auto-computed) |
-| `dte_at_close` | INTEGER | Days to expiry remaining when closed (computed from expiry date) |
-| `spot_price_at_close` | REAL | Underlying price at close time |
-| `iv_rank_at_close` | REAL | IV Rank at close time |
-| `vix_at_close` | REAL | VIX at close time |
-| `pct_premium_captured` | REAL | `(credit − close_price) / credit × 100` — % of original premium kept |
-
-**`pct_premium_captured` interpretation:**
-
-```
-Sold spread for $1.35 credit.
-Closed (take profit) at $0.68 → pct_premium_captured = (1.35 − 0.68) / 1.35 × 100 = 49.6%
-Expired worthless at $0.00    → pct_premium_captured = 100.0% (kept everything)
-Stopped out at $4.05          → pct_premium_captured = negative (lost money)
-```
-
-### 14.3 Data Flow
-
-Entry and exit context are threaded through the system without requiring any component to know about the others' internals:
-
-```
-── ENTRY CONTEXT ──────────────────────────────────────────────────────────
-
-  MarketScanner assembles MarketSnapshot
-    ↓
-  Strategy.evaluate(snapshot) — all gates pass
-    ↓
-  TradeSignal(snapshot=snapshot, spot_price=..., buffer_pct=..., reward_risk=...)
-    ↓ signal carried through SignalRanker → PortfolioGuard → TradeManager
-  TradeManager.process_signal(signal)
-    ↓ extracts signal.snapshot
-  PaperLedger.record_open(signal=signal, snapshot=signal.snapshot)
-    ↓
-  SQLite: rsi_at_open, pct_b_at_open, macd_at_open, vix_at_open,
-          spot_price_at_open, buffer_pct, reward_risk  → written to row
-
-── EXIT CONTEXT ────────────────────────────────────────────────────────────
-
-  PositionMonitor._check_position() — exit trigger fires
-    ↓ fetches spot via yfinance, computes DTE from expiry date
-  TradeManager.close_trade(spot_price_at_close=..., dte_at_close=...,
-                            iv_rank_at_close=..., vix_at_close=...)
-    ↓
-  PaperLedger.record_close(...)
-    ↓
-  SQLite: days_held (auto), dte_at_close, spot_price_at_close,
-          iv_rank_at_close, vix_at_close, pct_premium_captured → written to row
-```
-
-### 14.4 Database Schema (relevant columns)
-
-```sql
-CREATE TABLE paper_trades (
-    -- Core trade fields (always populated)
-    id              INTEGER PRIMARY KEY,
-    symbol          TEXT,
-    strategy_name   TEXT,
-    net_credit      REAL,
-    max_loss        REAL,
-    expiry          TEXT,
-    dte_at_open     INTEGER,
-    iv_rank         REAL,
-    delta           REAL,
-    regime          TEXT,
-    status          TEXT,    -- 'open' | 'closed' | 'expired'
-    pnl             REAL,
-    close_reason    TEXT,    -- 'expired_worthless' | 'take_profit' | 'stop_loss'
-                             --   | 'dte_close' | 'manual'
-    opened_at       TEXT,
-    closed_at       TEXT,
-
-    -- Entry context (NULL for trades pre-dating this feature)
-    spot_price_at_open  REAL,
-    buffer_pct          REAL,
-    reward_risk         REAL,
-    rsi_at_open         REAL,
-    pct_b_at_open       REAL,
-    macd_at_open        REAL,
-    vix_at_open         REAL,
-
-    -- Exit context (NULL for trades pre-dating this feature)
-    days_held            INTEGER,
-    dte_at_close         INTEGER,
-    spot_price_at_close  REAL,
-    iv_rank_at_close     REAL,
-    vix_at_close         REAL,
-    pct_premium_captured REAL
-)
-```
-
-### 14.5 Backward Compatibility & Migration
-
-`PaperLedger._migrate_db()` runs on every startup. It adds each new column via `ALTER TABLE ADD COLUMN` inside a try/except — SQLite raises `OperationalError` if the column already exists, which is silently ignored. The migration is idempotent and safe to run on any existing database. Historical trades receive `NULL` for all new columns; new trades get full context.
-
-### 14.6 New Statistics Fields
-
-`get_statistics()` returns two additional breakdowns once trades begin closing:
-
-```python
-stats = ledger.get_statistics()
-
-stats["avg_days_held"]      # average holding period (calendar days)
-stats["avg_dte_at_close"]   # average DTE remaining when positions were closed
-stats["avg_pct_captured"]   # average % of premium captured on winning trades only
-
-stats["by_close_reason"]    # dict keyed by exit reason:
-# {
-#   "expired_worthless": {"trades": 4, "total_pnl": 540.0, "avg_pnl": 135.0},
-#   "take_profit":       {"trades": 2, "total_pnl": 310.0, "avg_pnl": 155.0},
-#   "stop_loss":         {"trades": 1, "total_pnl": -680.0, "avg_pnl": -680.0},
-#   "dte_close":         {"trades": 1, "total_pnl":  90.0, "avg_pnl":  90.0},
-# }
-```
-
-### 14.7 PaperLedger Query Method Reference
-
-Complete list of public query methods available on a `PaperLedger` instance:
-
-| Method | Returns | Description |
-|---|---|---|
-| `get_open_trades()` | `List[Dict]` | All currently open positions, newest first |
-| `get_closed_trades(limit=100)` | `List[Dict]` | Closed/expired trades, newest first, with full entry + exit context |
-| `get_all_trades(limit=200)` | `List[Dict]` | All trades regardless of status, newest first |
-| `get_trade(trade_id)` | `Optional[Dict]` | Single trade by ID with all columns |
-| `get_trades_opened_on(date_str)` | `List[Dict]` | All trades opened on a given date (any status) — see below |
-| `get_statistics()` | `Dict` | Aggregate performance metrics and breakdowns |
-
-#### `get_trades_opened_on(date_str)`
-
-```python
-trades = ledger.get_trades_opened_on("2026-03-03")
-# Returns all rows where opened_at LIKE '2026-03-03%'
-# Includes open, closed, and expired trades for that date
-```
-
-**Purpose — bot restart safety.** The portfolio guard enforces a `max_trades_per_day` limit. Without this query, restarting the bot mid-day would reset the daily counter to zero, allowing more trades than intended to be placed. `PortfolioGuard.restore_from_ledger()` calls this method at startup to count every trade already placed today (including any subsequently stopped out or closed), then restores `_trades_today` to the correct value before the bot begins scanning.
-
-```
-Bot restarts at 11:30 ET after placing 2 trades at 09:35:
-
-  Without get_trades_opened_on:  _trades_today = 0  → guard allows 3 more (5 total today)
-  With get_trades_opened_on:     _trades_today = 2  → guard allows 1 more (3 total, as configured)
-```
-
-The `opened_at LIKE '2026-03-03%'` pattern correctly matches any datetime stored on that date regardless of the time component (e.g. `2026-03-03T09:35:42`), making it robust to timezone storage differences.
-
----
-
-## 15. Web Dashboard
-
-`dashboard.py` is a single-file Flask application that reads `paper_trades.db` directly and presents a live view of the bot's performance. It requires no additional database, no API keys, and runs independently of the bot process.
-
-```bash
-pip3 install flask          # one-time install
-
-cd /path/to/moomoo
-python3 dashboard.py        # → http://127.0.0.1:5000
-```
-
-The page auto-refreshes every 60 seconds. The bot and dashboard can run simultaneously — the ledger uses SQLite WAL mode so reads never block writes.
-
-### 15.1 Pages & Features
-
-#### `/` — Overview
-
-The landing page. Shows four KPI cards at the top:
-
-| Card | Content |
-|---|---|
-| Total Realised P&L | Sum of all closed trade P&L, green/red coloured |
-| Win Rate | Wins ÷ total closed trades; green if ≥ 60%, amber otherwise |
-| Open Positions | Count of currently open positions |
-| Avg Premium Captured | Average % of credit kept on closed trades |
-
-Below the KPIs, two panels sit side by side:
-
-**Validation Gate panel** — dual progress bars that visualise progress toward the go-live thresholds read directly from `config.yaml`:
-
-```
-Closed Trades  ████████░░  8 / 10   (amber — not yet reached)
-Win Rate       ██████████  67% / 60% (green — threshold met)
-
-Status: 🔒 In Progress — complete 2 more trade(s) to unlock live mode
-```
-
-Once both bars reach 100%, the panel turns green and displays:
-```
-✅ Validation Gate — PASSED
-🚀 Ready to switch mode: live in config.yaml
-```
-
-**Performance panel** — avg P&L/trade, best trade, worst trade, avg credit collected, avg days held, avg DTE at close.
-
-**By Strategy panel** — one row per strategy with trade count, win rate, and total P&L.
-
-**Open Positions mini-table** — symbol, strategy badge, credit, expiry, DTE countdown (red ≤5, amber ≤10, green otherwise), IV Rank, buffer %, and open date.
-
----
-
-#### `/positions` — Open Positions
-
-Full-width table of all currently open positions. Every entry context field is shown:
-
-| Column group | Fields |
-|---|---|
-| Identity | #, Symbol, Strategy |
-| Strikes | Sell Strike, Buy Strike (parsed from contract codes) |
-| Risk | Credit (×100), Max Loss, Reward/Risk |
-| Expiry | Expiry date, DTE (colour-coded) |
-| Entry conditions | IV Rank, Delta, Buffer %, Spot @ Open |
-| Technical context | RSI, %B, VIX |
-| Regime | Market regime at entry |
-| Timestamps | Opened datetime |
-
----
-
-#### `/history` — Trade History
-
-Full table of all closed trades. Entry context and exit context are shown side by side, making it straightforward to compare conditions at open vs close:
-
-| Column group | Fields |
-|---|---|
-| Identity | #, Symbol, Strategy |
-| Premium | Credit, Close Price, P&L (coloured), % Captured |
-| Exit | Exit reason (colour-coded badge), Days Held, DTE @ Close |
-| IV comparison | IV Rank @ Open, IV Rank @ Close |
-| VIX comparison | VIX @ Open, VIX @ Close |
-| Spot comparison | Spot @ Open, Spot @ Close |
-| Entry technicals | RSI, %B, MACD |
-| Structure | Buffer %, Reward/Risk |
-| Timestamps | Opened, Closed |
-
-**Exit reason badges:**
-
-| Badge colour | Reason | Interpretation |
-|---|---|---|
-| 🟢 Green | Expired Worthless | Best outcome — kept 100% of premium |
-| 🔵 Blue | Take Profit | Closed at 50% decay — systematic exit |
-| 🔵 Cyan | DTE Close | Closed at 21 DTE — gamma risk avoidance |
-| 🔴 Red | Stop Loss | Closed at 3× credit — loss management |
-| ⚫ Grey | Manual | Closed manually |
-
----
-
-#### `/stats` — Statistics
-
-Four cards:
-
-- **By Strategy** — trades, wins, win%, total P&L, avg P&L, avg days held, per strategy
-- **By Exit Reason** — trades, total P&L, avg P&L, per close reason
-- **Averages & Risk** — avg credit, avg max loss, avg days held, avg DTE at close, avg % premium captured (winners only), best/worst trade
-- **Overall Summary** — total trades, wins, win rate, total P&L, avg P&L, open count
-
----
-
-#### `/healthz` — Health Check
-
-Returns JSON. Useful for uptime monitoring or scripting:
-
-```json
-{
-  "status":   "ok",
-  "open":     3,
-  "closed":   8,
-  "win_rate": 62.5
-}
-```
-
-### 15.2 Configuration
-
-The dashboard reads gate thresholds from `config.yaml` automatically. No separate config is needed:
-
-```yaml
-# These values are read by dashboard.py at startup
-validation_gate:
-  min_trades:    10     # trades needed before gate can pass
-  min_win_rate:  0.60   # win rate threshold
-```
-
-If `config.yaml` is not found (e.g. the dashboard is run from a different directory), defaults of 10 trades and 60% win rate are used.
-
-The database path is resolved in this order:
-1. `--db` CLI argument
-2. `paper_ledger.db_path` in `config.yaml`
-3. Default: `data/paper_trades.db`
-
-### 15.3 Design Notes
-
-- **Dark theme** — Bootstrap 5 dark mode; readable on any monitor in a trading environment
-- **No JavaScript frameworks** — static HTML rendered server-side via Jinja2; no build step
-- **No external API calls** — all data comes from the local SQLite file; no network dependency
-- **Backward compatible** — columns introduced in the context logging phase default to `—` in the UI when `NULL` (i.e., for trades opened before the feature was added)
-- **Auto-refresh** — `<meta http-equiv="refresh">` every 60 seconds; configurable via `REFRESH_SECS` constant at the top of `dashboard.py`

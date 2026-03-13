@@ -54,30 +54,40 @@ class CoveredCallStrategy(BaseStrategy):
 
         # ── Gate 1: Shares held ───────────────────────────────────
         if snapshot.shares_held < 100:
-            self._skip(f"shares_held={snapshot.shares_held} < 100")
+            self._logger.debug(
+                f"{symbol}: SKIP — shares_held={snapshot.shares_held} < 100"
+            )
             return None
 
         # ── Gate 2: Position limit ────────────────────────────────
         max_pos = self._get_cfg("max_concurrent_positions", 2)
         if snapshot.open_positions >= max_pos:
-            self._skip(f"open_positions={snapshot.open_positions} >= max_concurrent={max_pos}")
+            self._logger.debug(
+                f"{symbol}: SKIP — open_positions={snapshot.open_positions} "
+                f">= max={max_pos}"
+            )
             return None
 
         # ── Gate 3: Regime ────────────────────────────────────────
         if snapshot.market_regime == "high_vol":
-            self._skip("regime=high_vol — no new trades during high volatility")
+            self._logger.debug(f"{symbol}: SKIP — regime=high_vol")
             return None
 
         # ── Gate 4: IV Rank ───────────────────────────────────────
         min_iv_rank = self._get_cfg("min_iv_rank", 30)
         if snapshot.options_context.iv_rank < min_iv_rank:
-            self._skip(f"iv_rank={snapshot.options_context.iv_rank:.0f} < min_iv_rank={min_iv_rank}")
+            self._logger.debug(
+                f"{symbol}: SKIP — iv_rank={snapshot.options_context.iv_rank:.1f} "
+                f"< min={min_iv_rank}"
+            )
             return None
 
         # ── Gate 5: RSI cap (avoid extreme overbought breakouts) ──
         max_rsi = self._get_cfg("max_rsi", 70)
         if snapshot.technicals.rsi > max_rsi:
-            self._skip(f"RSI={snapshot.technicals.rsi:.0f} > max_rsi={max_rsi}")
+            self._logger.debug(
+                f"{symbol}: SKIP — RSI={snapshot.technicals.rsi:.1f} > max={max_rsi}"
+            )
             return None
 
         # ── Gate 6: Target expiry ─────────────────────────────────
@@ -85,19 +95,22 @@ class CoveredCallStrategy(BaseStrategy):
             snapshot.options_context.available_expiries
         )
         if expiry is None:
-            self._skip(f"no expiry in DTE range {self._options._dte_min}-{self._options._dte_max}d")
+            self._logger.debug(f"{symbol}: SKIP — no suitable expiry in DTE range")
             return None
 
         # ── Gate 7: Earnings conflict ─────────────────────────────
         if self._options.check_earnings_conflict(expiry, snapshot.next_earnings):
-            self._skip(f"earnings conflict: expiry={expiry} overlaps earnings={snapshot.next_earnings}")
+            self._logger.debug(
+                f"{symbol}: SKIP — earnings conflict "
+                f"(expiry={expiry}, earnings={snapshot.next_earnings})"
+            )
             return None
 
         # ── Gate 8: Find qualifying OTM call ─────────────────────
         try:
             chain = self._moomoo.get_option_chain(symbol, expiry, "CALL")
             if len(chain) == 0:
-                self._skip(f"empty option chain for expiry={expiry}")
+                self._logger.debug(f"{symbol}: SKIP — empty option chain for {expiry}")
                 return None
 
             call_codes = chain["code"].tolist()
@@ -107,17 +120,20 @@ class CoveredCallStrategy(BaseStrategy):
             best_call  = self._options.select_best_call(otm_calls)
 
             if best_call is None:
-                self._skip(f"no OTM call with delta {self._options._delta_min}-{self._options._delta_max} and OI≥{self._options._min_oi}")
+                self._logger.debug(
+                    f"{symbol}: SKIP — no qualifying OTM call "
+                    f"(delta {self._options._delta_min}-{self._options._delta_max})"
+                )
                 return None
 
         except Exception as e:
-            self._skip(f"error fetching option chain: {e}")
+            self._logger.warning(f"{symbol}: SKIP — error fetching option data: {e}")
             return None
 
         # ── All gates passed — build TradeSignal ─────────────────
         sell_price = float(best_call.get("mid_price", best_call.get("ask_price", 0)))
         if sell_price <= 0:
-            self._skip(f"sell_price={sell_price:.2f} ≤ 0 — no valid mid/ask price")
+            self._logger.debug(f"{symbol}: SKIP — sell_price={sell_price} <= 0")
             return None
 
         delta    = float(best_call.get("option_delta", 0))
@@ -158,6 +174,9 @@ class CoveredCallStrategy(BaseStrategy):
             delta         = delta,
             reason        = reason,
             regime        = snapshot.market_regime,
+            spot_price    = round(snapshot.spot_price, 2),
+            buffer_pct    = round((strike - snapshot.spot_price) / snapshot.spot_price * 100, 2),
+            snapshot      = snapshot,
         )
 
         self._logger.info(

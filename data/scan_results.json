@@ -1,0 +1,941 @@
+{
+  "scan_timestamp": "2026-03-12T11:10:13.232819-04:00",
+  "scan_type": "morning",
+  "scan_number": 1,
+  "elapsed_seconds": 11.6,
+  "symbols_scanned": 8,
+  "signals_found": 0,
+  "signals_executed": 0,
+  "executed_trade_ids": [],
+  "symbols": [
+    {
+      "symbol": "US.SPY",
+      "spot_price": 667.89,
+      "regime": "high_vol",
+      "vix": 26.49,
+      "rsi": 36.8,
+      "pct_b": -0.12,
+      "macd": -3.648,
+      "iv_rank": 68.0,
+      "shares_held": 0,
+      "next_earnings_days": null,
+      "expiries_available": 37,
+      "strategies": [
+        {
+          "strategy": "covered_call",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "shares \u2265 100",
+              "passed": false,
+              "detail": "held=0"
+            },
+            {
+              "label": "positions < 2",
+              "passed": true,
+              "detail": "open=0"
+            },
+            {
+              "label": "regime \u2260 high_vol",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 30",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2264 70",
+              "passed": true,
+              "detail": "rsi=37"
+            }
+          ],
+          "result": "skip:shares \u2265 100 failed"
+        },
+        {
+          "strategy": "bear_call_spread",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "positions < 3",
+              "passed": false,
+              "detail": "open=3"
+            },
+            {
+              "label": "regime in ['bear', 'neutral']",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 35",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2265 45",
+              "passed": false,
+              "detail": "rsi=37"
+            },
+            {
+              "label": "%B \u2265 0.4",
+              "passed": false,
+              "detail": "%B=-0.12"
+            }
+          ],
+          "result": "skip:positions < 3 failed"
+        },
+        {
+          "strategy": "bull_put_spread",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "positions < 3",
+              "passed": true,
+              "detail": "open=0"
+            },
+            {
+              "label": "regime in ['bull', 'neutral']",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 35",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2265 35",
+              "passed": true,
+              "detail": "rsi=37"
+            },
+            {
+              "label": "RSI \u2264 65",
+              "passed": true,
+              "detail": "rsi=37"
+            },
+            {
+              "label": "%B \u2265 0.2",
+              "passed": false,
+              "detail": "%B=-0.12"
+            }
+          ],
+          "result": "skip:regime in ['bull', 'neutral'] failed"
+        }
+      ]
+    },
+    {
+      "symbol": "US.QQQ",
+      "spot_price": 598.44,
+      "regime": "high_vol",
+      "vix": 26.49,
+      "rsi": 42.6,
+      "pct_b": 0.087,
+      "macd": -2.431,
+      "iv_rank": 68.0,
+      "shares_held": 0,
+      "next_earnings_days": null,
+      "expiries_available": 35,
+      "strategies": [
+        {
+          "strategy": "covered_call",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "shares \u2265 100",
+              "passed": false,
+              "detail": "held=0"
+            },
+            {
+              "label": "positions < 2",
+              "passed": true,
+              "detail": "open=0"
+            },
+            {
+              "label": "regime \u2260 high_vol",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 30",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2264 70",
+              "passed": true,
+              "detail": "rsi=43"
+            }
+          ],
+          "result": "skip:shares \u2265 100 failed"
+        },
+        {
+          "strategy": "bear_call_spread",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "positions < 3",
+              "passed": false,
+              "detail": "open=3"
+            },
+            {
+              "label": "regime in ['bear', 'neutral']",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 35",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2265 45",
+              "passed": false,
+              "detail": "rsi=43"
+            },
+            {
+              "label": "%B \u2265 0.4",
+              "passed": false,
+              "detail": "%B=0.09"
+            }
+          ],
+          "result": "skip:positions < 3 failed"
+        },
+        {
+          "strategy": "bull_put_spread",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "positions < 3",
+              "passed": true,
+              "detail": "open=0"
+            },
+            {
+              "label": "regime in ['bull', 'neutral']",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 35",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2265 35",
+              "passed": true,
+              "detail": "rsi=43"
+            },
+            {
+              "label": "RSI \u2264 65",
+              "passed": true,
+              "detail": "rsi=43"
+            },
+            {
+              "label": "%B \u2265 0.2",
+              "passed": false,
+              "detail": "%B=0.09"
+            }
+          ],
+          "result": "skip:regime in ['bull', 'neutral'] failed"
+        }
+      ]
+    },
+    {
+      "symbol": "US.AAPL",
+      "spot_price": 254.88,
+      "regime": "high_vol",
+      "vix": 26.49,
+      "rsi": 38.9,
+      "pct_b": 0.084,
+      "macd": -1.859,
+      "iv_rank": 68.0,
+      "shares_held": 0,
+      "next_earnings_days": 50,
+      "expiries_available": 27,
+      "strategies": [
+        {
+          "strategy": "covered_call",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "shares \u2265 100",
+              "passed": false,
+              "detail": "held=0"
+            },
+            {
+              "label": "positions < 2",
+              "passed": true,
+              "detail": "open=0"
+            },
+            {
+              "label": "regime \u2260 high_vol",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 30",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2264 70",
+              "passed": true,
+              "detail": "rsi=39"
+            }
+          ],
+          "result": "skip:shares \u2265 100 failed"
+        },
+        {
+          "strategy": "bear_call_spread",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "positions < 3",
+              "passed": false,
+              "detail": "open=3"
+            },
+            {
+              "label": "regime in ['bear', 'neutral']",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 35",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2265 45",
+              "passed": false,
+              "detail": "rsi=39"
+            },
+            {
+              "label": "%B \u2265 0.4",
+              "passed": false,
+              "detail": "%B=0.08"
+            }
+          ],
+          "result": "skip:positions < 3 failed"
+        },
+        {
+          "strategy": "bull_put_spread",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "positions < 3",
+              "passed": true,
+              "detail": "open=0"
+            },
+            {
+              "label": "regime in ['bull', 'neutral']",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 35",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2265 35",
+              "passed": true,
+              "detail": "rsi=39"
+            },
+            {
+              "label": "RSI \u2264 65",
+              "passed": true,
+              "detail": "rsi=39"
+            },
+            {
+              "label": "%B \u2265 0.2",
+              "passed": false,
+              "detail": "%B=0.08"
+            }
+          ],
+          "result": "skip:regime in ['bull', 'neutral'] failed"
+        }
+      ]
+    },
+    {
+      "symbol": "US.MSFT",
+      "spot_price": 403.78,
+      "regime": "high_vol",
+      "vix": 26.49,
+      "rsi": 44.2,
+      "pct_b": 0.624,
+      "macd": -5.669,
+      "iv_rank": 68.0,
+      "shares_held": 0,
+      "next_earnings_days": 49,
+      "expiries_available": 27,
+      "strategies": [
+        {
+          "strategy": "covered_call",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "shares \u2265 100",
+              "passed": false,
+              "detail": "held=0"
+            },
+            {
+              "label": "positions < 2",
+              "passed": true,
+              "detail": "open=0"
+            },
+            {
+              "label": "regime \u2260 high_vol",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 30",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2264 70",
+              "passed": true,
+              "detail": "rsi=44"
+            }
+          ],
+          "result": "skip:shares \u2265 100 failed"
+        },
+        {
+          "strategy": "bear_call_spread",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "positions < 3",
+              "passed": false,
+              "detail": "open=3"
+            },
+            {
+              "label": "regime in ['bear', 'neutral']",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 35",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2265 45",
+              "passed": false,
+              "detail": "rsi=44"
+            },
+            {
+              "label": "%B \u2265 0.4",
+              "passed": true,
+              "detail": "%B=0.62"
+            }
+          ],
+          "result": "skip:positions < 3 failed"
+        },
+        {
+          "strategy": "bull_put_spread",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "positions < 3",
+              "passed": true,
+              "detail": "open=0"
+            },
+            {
+              "label": "regime in ['bull', 'neutral']",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 35",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2265 35",
+              "passed": true,
+              "detail": "rsi=44"
+            },
+            {
+              "label": "RSI \u2264 65",
+              "passed": true,
+              "detail": "rsi=44"
+            },
+            {
+              "label": "%B \u2265 0.2",
+              "passed": true,
+              "detail": "%B=0.62"
+            }
+          ],
+          "result": "skip:regime in ['bull', 'neutral'] failed"
+        }
+      ]
+    },
+    {
+      "symbol": "US.AMZN",
+      "spot_price": 208.82,
+      "regime": "high_vol",
+      "vix": 26.49,
+      "rsi": 42.6,
+      "pct_b": 0.499,
+      "macd": -2.389,
+      "iv_rank": 68.0,
+      "shares_held": 0,
+      "next_earnings_days": 50,
+      "expiries_available": 27,
+      "strategies": [
+        {
+          "strategy": "covered_call",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "shares \u2265 100",
+              "passed": false,
+              "detail": "held=0"
+            },
+            {
+              "label": "positions < 2",
+              "passed": true,
+              "detail": "open=0"
+            },
+            {
+              "label": "regime \u2260 high_vol",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 30",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2264 70",
+              "passed": true,
+              "detail": "rsi=43"
+            }
+          ],
+          "result": "skip:shares \u2265 100 failed"
+        },
+        {
+          "strategy": "bear_call_spread",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "positions < 3",
+              "passed": false,
+              "detail": "open=3"
+            },
+            {
+              "label": "regime in ['bear', 'neutral']",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 35",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2265 45",
+              "passed": false,
+              "detail": "rsi=43"
+            },
+            {
+              "label": "%B \u2265 0.4",
+              "passed": true,
+              "detail": "%B=0.50"
+            }
+          ],
+          "result": "skip:positions < 3 failed"
+        },
+        {
+          "strategy": "bull_put_spread",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "positions < 3",
+              "passed": true,
+              "detail": "open=0"
+            },
+            {
+              "label": "regime in ['bull', 'neutral']",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 35",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2265 35",
+              "passed": true,
+              "detail": "rsi=43"
+            },
+            {
+              "label": "RSI \u2264 65",
+              "passed": true,
+              "detail": "rsi=43"
+            },
+            {
+              "label": "%B \u2265 0.2",
+              "passed": true,
+              "detail": "%B=0.50"
+            }
+          ],
+          "result": "skip:regime in ['bull', 'neutral'] failed"
+        }
+      ]
+    },
+    {
+      "symbol": "US.GOOGL",
+      "spot_price": 301.58,
+      "regime": "high_vol",
+      "vix": 26.49,
+      "rsi": 40.9,
+      "pct_b": 0.231,
+      "macd": -4.17,
+      "iv_rank": 68.0,
+      "shares_held": 0,
+      "next_earnings_days": 43,
+      "expiries_available": 26,
+      "strategies": [
+        {
+          "strategy": "covered_call",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "shares \u2265 100",
+              "passed": false,
+              "detail": "held=0"
+            },
+            {
+              "label": "positions < 2",
+              "passed": true,
+              "detail": "open=0"
+            },
+            {
+              "label": "regime \u2260 high_vol",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 30",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2264 70",
+              "passed": true,
+              "detail": "rsi=41"
+            }
+          ],
+          "result": "skip:shares \u2265 100 failed"
+        },
+        {
+          "strategy": "bear_call_spread",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "positions < 3",
+              "passed": false,
+              "detail": "open=3"
+            },
+            {
+              "label": "regime in ['bear', 'neutral']",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 35",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2265 45",
+              "passed": false,
+              "detail": "rsi=41"
+            },
+            {
+              "label": "%B \u2265 0.4",
+              "passed": false,
+              "detail": "%B=0.23"
+            }
+          ],
+          "result": "skip:positions < 3 failed"
+        },
+        {
+          "strategy": "bull_put_spread",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "positions < 3",
+              "passed": true,
+              "detail": "open=0"
+            },
+            {
+              "label": "regime in ['bull', 'neutral']",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 35",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2265 35",
+              "passed": true,
+              "detail": "rsi=41"
+            },
+            {
+              "label": "RSI \u2264 65",
+              "passed": true,
+              "detail": "rsi=41"
+            },
+            {
+              "label": "%B \u2265 0.2",
+              "passed": true,
+              "detail": "%B=0.23"
+            }
+          ],
+          "result": "skip:regime in ['bull', 'neutral'] failed"
+        }
+      ]
+    },
+    {
+      "symbol": "US.NVDA",
+      "spot_price": 181.95,
+      "regime": "high_vol",
+      "vix": 26.49,
+      "rsi": 47.0,
+      "pct_b": 0.324,
+      "macd": -0.864,
+      "iv_rank": 68.0,
+      "shares_held": 0,
+      "next_earnings_days": 70,
+      "expiries_available": 26,
+      "strategies": [
+        {
+          "strategy": "covered_call",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "shares \u2265 100",
+              "passed": false,
+              "detail": "held=0"
+            },
+            {
+              "label": "positions < 2",
+              "passed": true,
+              "detail": "open=0"
+            },
+            {
+              "label": "regime \u2260 high_vol",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 30",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2264 70",
+              "passed": true,
+              "detail": "rsi=47"
+            }
+          ],
+          "result": "skip:shares \u2265 100 failed"
+        },
+        {
+          "strategy": "bear_call_spread",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "positions < 3",
+              "passed": false,
+              "detail": "open=3"
+            },
+            {
+              "label": "regime in ['bear', 'neutral']",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 35",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2265 45",
+              "passed": true,
+              "detail": "rsi=47"
+            },
+            {
+              "label": "%B \u2265 0.4",
+              "passed": false,
+              "detail": "%B=0.32"
+            }
+          ],
+          "result": "skip:positions < 3 failed"
+        },
+        {
+          "strategy": "bull_put_spread",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "positions < 3",
+              "passed": true,
+              "detail": "open=0"
+            },
+            {
+              "label": "regime in ['bull', 'neutral']",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 35",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2265 35",
+              "passed": true,
+              "detail": "rsi=47"
+            },
+            {
+              "label": "RSI \u2264 65",
+              "passed": true,
+              "detail": "rsi=47"
+            },
+            {
+              "label": "%B \u2265 0.2",
+              "passed": true,
+              "detail": "%B=0.32"
+            }
+          ],
+          "result": "skip:regime in ['bull', 'neutral'] failed"
+        }
+      ]
+    },
+    {
+      "symbol": "US.TSLA",
+      "spot_price": 395.78,
+      "regime": "high_vol",
+      "vix": 26.49,
+      "rsi": 42.1,
+      "pct_b": 0.142,
+      "macd": -6.542,
+      "iv_rank": 68.0,
+      "shares_held": 100,
+      "next_earnings_days": 41,
+      "expiries_available": 26,
+      "strategies": [
+        {
+          "strategy": "covered_call",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "shares \u2265 100",
+              "passed": true,
+              "detail": "held=100"
+            },
+            {
+              "label": "positions < 2",
+              "passed": true,
+              "detail": "open=0"
+            },
+            {
+              "label": "regime \u2260 high_vol",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 30",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2264 70",
+              "passed": true,
+              "detail": "rsi=42"
+            }
+          ],
+          "result": "skip:regime \u2260 high_vol failed"
+        },
+        {
+          "strategy": "bear_call_spread",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "positions < 3",
+              "passed": false,
+              "detail": "open=3"
+            },
+            {
+              "label": "regime in ['bear', 'neutral']",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 35",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2265 45",
+              "passed": false,
+              "detail": "rsi=42"
+            },
+            {
+              "label": "%B \u2265 0.4",
+              "passed": false,
+              "detail": "%B=0.14"
+            }
+          ],
+          "result": "skip:positions < 3 failed"
+        },
+        {
+          "strategy": "bull_put_spread",
+          "enabled": true,
+          "gates": [
+            {
+              "label": "positions < 3",
+              "passed": true,
+              "detail": "open=0"
+            },
+            {
+              "label": "regime in ['bull', 'neutral']",
+              "passed": false,
+              "detail": "regime=high_vol"
+            },
+            {
+              "label": "IV rank \u2265 35",
+              "passed": true,
+              "detail": "iv_rank=68"
+            },
+            {
+              "label": "RSI \u2265 35",
+              "passed": true,
+              "detail": "rsi=42"
+            },
+            {
+              "label": "RSI \u2264 65",
+              "passed": true,
+              "detail": "rsi=42"
+            },
+            {
+              "label": "%B \u2265 0.2",
+              "passed": false,
+              "detail": "%B=0.14"
+            }
+          ],
+          "result": "skip:regime in ['bull', 'neutral'] failed"
+        }
+      ]
+    }
+  ],
+  "candidates": []
+}

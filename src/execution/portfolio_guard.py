@@ -174,6 +174,19 @@ class PortfolioGuard:
             logger.info(f"BLOCKED [{signal.symbol}]: {reason}")
             return False, reason
 
+        # Check 6: Iron condor prevention — don't hold opposing spreads on the same symbol.
+        # A bear call spread + bull put spread on the same symbol forms an iron condor,
+        # which requires combined Greeks management not yet implemented. Keep them separate.
+        opposing = self._find_opposing_spread(signal)
+        if opposing:
+            reason = (
+                f"Iron condor prevention: {signal.symbol} already has an open "
+                f"{opposing['strategy']} position. Managing both sides on the same symbol "
+                f"requires iron condor logic not yet implemented. Use different symbols."
+            )
+            logger.info(f"BLOCKED [{signal.symbol}]: {reason}")
+            return False, reason
+
         logger.info(
             f"APPROVED [{signal.symbol}]: {signal.strategy_name} | "
             f"open_positions={len(self._open_positions)} | "
@@ -265,6 +278,25 @@ class PortfolioGuard:
     def _find_duplicate(self, signal: TradeSignal) -> Optional[dict]:
         for p in self._open_positions:
             if p["symbol"] == signal.symbol and p["strategy"] == signal.strategy_name:
+                return p
+        return None
+
+    def _find_opposing_spread(self, signal: TradeSignal) -> Optional[dict]:
+        """
+        Check whether the same symbol already has the opposing spread direction open.
+        Prevents accidental iron condor formation without combined management.
+
+        bear_call_spread opposes bull_put_spread and vice versa.
+        """
+        opposing_map = {
+            "bear_call_spread": "bull_put_spread",
+            "bull_put_spread":  "bear_call_spread",
+        }
+        opposing_name = opposing_map.get(signal.strategy_name)
+        if opposing_name is None:
+            return None   # covered_call has no opposing spread
+        for p in self._open_positions:
+            if p["symbol"] == signal.symbol and p["strategy"] == opposing_name:
                 return p
         return None
 

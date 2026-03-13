@@ -37,6 +37,7 @@ from src.strategies.trade_signal import TradeSignal
 from src.execution.portfolio_guard import PortfolioGuard
 from src.execution.order_router import OrderRouter, FillResult
 from src.execution.paper_ledger import PaperLedger
+from src.execution.signal_ranker import SignalRanker
 from src.exceptions import OrderError
 from src.logger import get_logger
 
@@ -67,15 +68,17 @@ class TradeManager:
         router:  OrderRouter,
         ledger:  PaperLedger,
     ):
-        self._config = config
-        self._guard  = guard
-        self._router = router
-        self._ledger = ledger
-        self._mode   = config.get("mode", "paper").lower()
+        self._config   = config
+        self._guard    = guard
+        self._router   = router
+        self._ledger   = ledger
+        self._mode     = config.get("mode", "paper").lower()
         self._is_paper = (self._mode == "paper")
+        self._ranker   = SignalRanker(config)
 
         logger.info(
-            f"TradeManager initialised | mode={self._mode}"
+            f"TradeManager initialised | mode={self._mode} | "
+            f"ranker_enabled={self._ranker.is_enabled}"
         )
 
     # ── Public API ────────────────────────────────────────────────
@@ -154,6 +157,7 @@ class TradeManager:
             signal=    signal,
             fill_sell= fill.fill_sell,
             fill_buy=  fill.fill_buy,
+            snapshot=  signal.snapshot,   # Phase 3: entry context (RSI, %B, MACD, VIX)
         )
 
         # ── Step 5: Update portfolio guard state ──────────────────
@@ -178,51 +182,101 @@ class TradeManager:
 
     def process_signals(self, signals: List[TradeSignal]) -> List[TradeResult]:
         """
-        Process a batch of signals from StrategyRegistry.evaluate_universe().
+        Process a batch of signals using the two-pass rank-then-execute approach.
+
+        Pass 1 — Rank:
+          SignalRanker scores all candidates and returns them sorted best-first.
+          When signal_ranker.enabled=false the original order is preserved.
+
+        Pass 2 — Execute:
+          Walk the ranked list top-to-bottom.
+          PortfolioGuard.approve() is called for each signal in rank order.
+          The first N signals that pass all guard checks are executed, where N
+          is determined by the guard's daily limit and position capacity.
+          Signals that are blocked, or that would exceed the daily limit after
+          it has already been reached, still get a TradeResult so the scheduler
+          can display the full ranked outcome.
 
         Args:
-            signals: List of TradeSignals to process
+            signals: All qualifying signals collected from scan_universe()
 
         Returns:
-            List of TradeResults (one per signal).
+            List of TradeResults in rank order (best-ranked first).
+            Every input signal gets exactly one result.
         """
+        if not signals:
+            return []
+
+        # ── Pass 1: Rank all candidates ───────────────────────────
+        ranked = self._ranker.rank(signals)
+
+        if self._ranker.is_enabled:
+            logger.info(
+                f"SignalRanker: {len(ranked)} candidate(s) ranked | "
+                f"top candidate: {ranked[0].signal.symbol} "
+                f"{ranked[0].signal.strategy_name} score={ranked[0].score:.4f}"
+            )
+        else:
+            logger.info(
+                f"SignalRanker disabled — processing {len(signals)} signal(s) in FIFO order"
+            )
+
+        # ── Pass 2: Walk ranked list through the guard ────────────
         results = []
-        for signal in signals:
-            result = self.process_signal(signal)
+        for ranked_signal in ranked:
+            result = self.process_signal(ranked_signal.signal)
             results.append(result)
 
         executed = sum(1 for r in results if r.executed)
         blocked  = sum(1 for r in results if not r.approved)
-        failed   = sum(1 for r in results if r.approved and not r.executed)
+        skipped  = sum(1 for r in results if r.approved and not r.executed)
 
         logger.info(
             f"Batch complete: {len(signals)} signals | "
-            f"{executed} executed | {blocked} blocked | {failed} failed"
+            f"{executed} executed | {blocked} blocked | {skipped} skipped"
         )
         return results
 
     def close_trade(
         self,
-        trade_id:     int,
-        close_price:  float,
-        close_reason: str,
-        symbol:       str,
-        strategy_name: str,
+        trade_id:            int,
+        close_price:         float,
+        close_reason:        str,
+        symbol:              str,
+        strategy_name:       str,
+        # ── Exit context — passed through to PaperLedger ──────────
+        spot_price_at_close: float = None,
+        dte_at_close:        int   = None,
+        iv_rank_at_close:    float = None,
+        vix_at_close:        float = None,
     ) -> float:
         """
         Close an existing paper trade.
 
         Args:
-            trade_id:      PaperLedger trade ID
-            close_price:   Net debit to close (0 if expired worthless)
-            close_reason:  "expired_worthless" | "stop_loss" | "take_profit" | "manual"
-            symbol:        MooMoo symbol for portfolio guard update
-            strategy_name: Strategy that opened the position
+            trade_id:            PaperLedger trade ID
+            close_price:         Net debit to close (0 if expired worthless)
+            close_reason:        "expired_worthless" | "stop_loss" | "take_profit"
+                                 | "dte_close" | "manual"
+            symbol:              MooMoo symbol for portfolio guard update
+            strategy_name:       Strategy that opened the position
+            spot_price_at_close: Underlying spot price at close time
+            dte_at_close:        Days to expiry remaining when closed
+            iv_rank_at_close:    IV Rank at close time
+            vix_at_close:        VIX at close time
 
         Returns:
             Realised P&L
         """
-        pnl = self._ledger.record_close(trade_id, close_price, close_reason)
+        pnl = self._ledger.record_close(
+            trade_id,
+            close_price,
+            close_reason,
+            spot_price_at_close= spot_price_at_close,
+            dte_at_close=        dte_at_close,
+            iv_rank_at_close=    iv_rank_at_close,
+            vix_at_close=        vix_at_close,
+        )
         self._guard.record_close(symbol, strategy_name)
 
         action = "✅ profit" if pnl > 0 else "❌ loss"

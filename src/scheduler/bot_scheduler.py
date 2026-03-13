@@ -33,7 +33,9 @@ import signal
 import re
 import sys
 import time
+import json
 from datetime import datetime, date
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import schedule
@@ -48,6 +50,7 @@ from src.market.market_scanner import MarketScanner
 from src.strategies.strategy_registry import StrategyRegistry
 from src.strategies.premium_selling.covered_call import CoveredCallStrategy
 from src.strategies.premium_selling.bear_call_spread import BearCallSpreadStrategy
+from src.strategies.premium_selling.bull_put_spread import BullPutSpreadStrategy
 from src.execution.portfolio_guard import PortfolioGuard
 from src.execution.order_router import OrderRouter
 from src.execution.paper_ledger import PaperLedger
@@ -186,6 +189,7 @@ class BotScheduler:
         self._scan_count      = 0
         self._monitor_count   = 0
         self._morning_snapshots: dict = {}   # symbol → MarketSnapshot from 09:35 scan
+        self._last_unrealised_pnl: float = 0.0  # updated by monitor job, used by heartbeat
 
         logger.info(
             f"BotScheduler initialised | mode={self._mode} | "
@@ -226,6 +230,7 @@ class BotScheduler:
         registry = StrategyRegistry()
         registry.register(CoveredCallStrategy(config, data_connector, options))
         registry.register(BearCallSpreadStrategy(config, data_connector, options))
+        registry.register(BullPutSpreadStrategy(config, data_connector, options))
 
         guard  = PortfolioGuard(config)
         router = OrderRouter(config, exec_connector)
@@ -304,8 +309,12 @@ class BotScheduler:
         hour   = now_et.hour + now_et.minute / 60
         if 9.6 <= hour < 16.0:
             self._safe_run(self._scan_job, "scan")
+            # Populate positions_mark.json immediately so dashboard shows P&L on first load.
+            # skip_rescan=True avoids a second option chain fetch right after the scan
+            # which would breach MooMoo's 10 requests/30s rate limit.
+            self._safe_run(self._monitor_job, "monitor", skip_rescan=True)
         else:
-            print(f"  (startup scan skipped — outside market hours)\n")
+            print(f"  (startup scan/monitor skipped — outside market hours)\n")
 
         self._running = True
         while self._running:
@@ -409,7 +418,11 @@ class BotScheduler:
         else:
             next_job  = "—"
 
-        pnl_str = f"P&L ${total_pnl:+,.0f}" if stats.get("total_trades", 0) > 0 else "no closed trades yet"
+        # Build P&L string: realised (closed trades) + unrealised (open positions)
+        has_closed = stats.get("total_trades", 0) > 0
+        realised_str   = f"realised ${total_pnl:+,.0f}" if has_closed else "no closed trades"
+        unrealised_str = f"  open ${self._last_unrealised_pnl:+,.0f}" if self._last_unrealised_pnl != 0.0 else ""
+        pnl_str = f"P&L {realised_str}{unrealised_str}"
 
         print(
             f"  [{_now_et()}] ♥  bot alive  │  "
@@ -478,10 +491,19 @@ class BotScheduler:
             print(f"  ── Result: no signals generated this cycle")
         else:
             _blank()
-            print(f"  ── {len(signals)} signal(s) generated")
+            print(f"  ── {len(signals)} signal(s) generated — ranking candidates")
+
+            # ── Rank for display (pure call — no side effects) ────
+            ranked = self._manager._ranker.rank(signals)
+
+            # ── Execute (ranker runs internally in process_signals) ──
             results = self._manager.process_signals(signals)
+
+            # ── Ranked table then per-signal detail ─────────────
+            self._print_ranking_table(ranked, results)
             for res in results:
                 self._print_trade_result(res)
+
             # Notify
             # Only notify for signals approved but NOT auto-executed (need manual action)
             # Paper fills (r.executed=True) are auto-recorded — no bell needed
@@ -497,6 +519,15 @@ class BotScheduler:
         _blank()
         logger.info(f"[SCAN JOB] Complete in {elapsed:.1f}s | {len(snapshots)} symbols | {len(signals)} signals")
 
+        # ── Persist scan results for dashboard ────────────────────
+        try:
+            _ranked   = ranked   if signals else []
+            _results  = results  if signals else []
+            scan_data = self._build_scan_data(snapshots, signals, _ranked, _results, elapsed)
+            self._write_scan_results(scan_data)
+        except Exception as _e:
+            logger.warning(f"[SCAN JOB] Could not write scan_results.json: {_e}")
+
     def _print_gate_analysis(self, snap) -> None:
         """
         Print ALL pass/fail gates for each strategy — never short-circuits.
@@ -511,6 +542,8 @@ class BotScheduler:
         symbol_ticker = snap.symbol.replace("US.", "")
         open_bcs = sum(1 for t in open_trades
                        if t["strategy_name"] == "bear_call_spread")
+        open_bps = sum(1 for t in open_trades
+                       if t["strategy_name"] == "bull_put_spread")
         open_cc  = sum(1 for t in open_trades
                        if t["strategy_name"] == "covered_call")
 
@@ -590,6 +623,112 @@ class BotScheduler:
                 else:
                     print(f"    ↳  chain evaluated  →  all gates passed — signal generated ✅")
 
+        # ── Bull put spread ───────────────────────────────────────
+        bps_cfg = self._config.get("strategies", {}).get("bull_put_spread", {})
+        bps_on  = bps_cfg.get("enabled", True)
+        _blank()
+        print(f"  bull_put_spread{'  [DISABLED]' if not bps_on else ''}:")
+        if bps_on:
+            min_iv    = bps_cfg.get("min_iv_rank", 35)
+            min_rsi   = bps_cfg.get("min_rsi_floor", 35)
+            max_rsi   = bps_cfg.get("max_rsi_ceiling", 65)
+            min_pct_b = bps_cfg.get("min_pct_b", 0.20)
+            min_cred  = bps_cfg.get("min_credit", 0.50)
+            min_rr    = bps_cfg.get("min_reward_risk", 0.20)
+            max_pos   = bps_cfg.get("max_concurrent_positions", 3)
+            allowed   = bps_cfg.get("allowed_regimes", ["bull", "neutral"])
+            g = [
+                (open_bps < max_pos,
+                    f"positions < {max_pos}",                 f"open={open_bps}"),
+                (snap.market_regime in allowed,
+                    f"regime in {allowed}",                   f"regime={snap.market_regime}"),
+                (snap.options_context.iv_rank >= min_iv,
+                    f"IV rank ≥ {min_iv}",                    f"iv_rank={snap.options_context.iv_rank:.0f}"),
+                (snap.technicals.rsi >= min_rsi,
+                    f"RSI ≥ {min_rsi}  (not in freefall)",    f"rsi={snap.technicals.rsi:.0f}"),
+                (snap.technicals.rsi <= max_rsi,
+                    f"RSI ≤ {max_rsi}  (not overbought)",     f"rsi={snap.technicals.rsi:.0f}"),
+                (snap.technicals.pct_b >= min_pct_b,
+                    f"%B ≥ {min_pct_b}",                      f"%B={snap.technicals.pct_b:.2f}"),
+            ]
+            all_pass = True
+            for passed, label, detail in g:
+                print(_gate(passed, label, detail))
+                if not passed:
+                    all_pass = False
+            if all_pass:
+                strat = next((s for s in self._registry._strategies
+                               if s.name == "bull_put_spread"), None)
+                reason = strat.last_skip_reason if strat else ""
+                if reason:
+                    print(f"    ↳  chain evaluated  (need credit≥${min_cred}, R/R≥{min_rr})")
+                    print(f"    ↳  ❌  {reason}")
+                else:
+                    print(f"    ↳  chain evaluated  →  all gates passed — signal generated ✅")
+
+    def _print_ranking_table(self, ranked, results) -> None:
+        """
+        Print a compact ranked table showing all candidates with scores and outcomes.
+
+        Called after process_signals() so we can annotate each row with its
+        execution outcome (executed / blocked / skipped).
+
+        When the ranker is disabled, prints a note that FIFO order was used.
+        """
+        if not ranked:
+            return
+
+        ranker_enabled = self._manager._ranker.is_enabled
+
+        _blank()
+        if ranker_enabled:
+            print(f"  ── RANKING TABLE  ({len(ranked)} candidate(s))")
+        else:
+            print(f"  ── CANDIDATES  ({len(ranked)})  [ranker disabled — FIFO order]")
+        print(f"  {'#':<4}  {'Symbol':<10}  {'Strategy':<20}  {'IVR':>4}  {'Buf%':>5}  {'R/R':>5}  {'Score':>6}  Outcome")
+        print(f"  {'─'*78}")
+
+        # Build a lookup from signal identity to TradeResult
+        # TradeManager returns results in ranked order, so zip is reliable
+        result_map: dict = {}
+        for res in results:
+            key = (res.signal.symbol, res.signal.strategy_name)
+            result_map[key] = res
+
+        for rs in ranked:
+            sig  = rs.signal
+            key  = (sig.symbol, sig.strategy_name)
+            res  = result_map.get(key)
+
+            # Outcome tag
+            if res is None:
+                outcome = "?"
+            elif res.executed:
+                outcome = "✅ EXECUTED"
+            elif not res.approved:
+                short_reason = (res.blocked_reason or "blocked")[:28]
+                outcome = f"🚫 {short_reason}"
+            else:
+                short_reason = (res.blocked_reason or "skipped")[:28]
+                outcome = f"⚠️  {short_reason}"
+
+            ivr_str  = f"{sig.iv_rank:.0f}"   if sig.iv_rank   is not None else "—"
+            buf_str  = f"{sig.buffer_pct:.1f}" if getattr(sig, "buffer_pct",  None) is not None else "—"
+            rr_str   = f"{sig.reward_risk:.2f}" if sig.reward_risk is not None else "—"
+            score_str = f"{rs.score:.4f}" if ranker_enabled else "  —   "
+            rank_str  = f"#{rs.rank}" if ranker_enabled else f"  {ranked.index(rs)+1}"
+
+            sym   = sig.symbol.replace("US.", "")
+            strat = sig.strategy_name[:20]
+
+            print(
+                f"  {rank_str:<4}  {sym:<10}  {strat:<20}  {ivr_str:>4}  "
+                f"{buf_str:>5}  {rr_str:>5}  {score_str:>6}  {outcome}"
+            )
+
+        print(f"  {'─'*78}")
+        _blank()
+
     def _print_trade_result(self, result) -> None:
         """Print one trade result (signal → execution outcome)."""
         try:
@@ -639,7 +778,7 @@ class BotScheduler:
 
     # ── MONITOR JOB ──────────────────────────────────────────────
 
-    def _monitor_job(self, force: bool = False) -> None:
+    def _monitor_job(self, force: bool = False, skip_rescan: bool = False) -> None:
         self._monitor_count += 1
         _blank()
         print(_bar("─"))
@@ -706,6 +845,20 @@ class BotScheduler:
                     f"${credit:>6.2f} {current_str:>8} {pnl_str:>8} {str(dte):>4}  {status}"
                 )
 
+        # Cache current unrealised P&L for heartbeat display
+        if summary and market_open:
+            live_pnls = [pos.get("unrealised_pnl") for pos in summary
+                         if pos.get("unrealised_pnl") is not None]
+            if live_pnls:
+                self._last_unrealised_pnl = sum(live_pnls)
+
+        # Persist mark prices for dashboard /positions page
+        if market_open and summary:
+            try:
+                self._write_positions_mark(summary)
+            except Exception as _me:
+                logger.warning(f"[MONITOR] Could not write positions_mark.json: {_me}")
+
         # Run actual exit checks
         actions = self._monitor.run_cycle(force=force)
         if actions:
@@ -724,7 +877,8 @@ class BotScheduler:
                 print(f"  ── No exits triggered — all positions held")
 
         # ── Intraday rescan for new entries ─────────────────────
-        self._intraday_rescan()
+        if not skip_rescan:
+            self._intraday_rescan()
 
         print(_bar("─"))
         _blank()
@@ -733,6 +887,231 @@ class BotScheduler:
             f"{len(actions) if actions else 0} exits"
         )
 
+
+    # ── SCAN RESULTS PERSISTENCE (for dashboard /scan page) ──────
+
+    def _build_gate_data(self, snap) -> list:
+        """
+        Return structured gate data for a snapshot — mirrors _print_gate_analysis
+        but produces a list of dicts instead of printing.
+
+        Returns:
+            [
+              {
+                "strategy": "bear_call_spread",
+                "enabled":  True,
+                "gates": [{"label": "IV rank ≥ 35", "passed": True, "detail": "iv_rank=55"}],
+                "result": "signal" | "skip:<reason>" | "disabled"
+              },
+              ...
+            ]
+        """
+        open_trades = self._ledger.get_open_trades()
+        open_bcs = sum(1 for t in open_trades if t["strategy_name"] == "bear_call_spread")
+        open_bps = sum(1 for t in open_trades if t["strategy_name"] == "bull_put_spread")
+        open_cc  = sum(1 for t in open_trades if t["strategy_name"] == "covered_call")
+
+        strategies_data = []
+
+        # ── Covered call ──────────────────────────────────────────
+        cc_cfg = self._config.get("strategies", {}).get("covered_call", {})
+        cc_on  = cc_cfg.get("enabled", True)
+        if cc_on:
+            min_iv  = cc_cfg.get("min_iv_rank", 30)
+            max_rsi = cc_cfg.get("max_rsi", 70)
+            max_pos = cc_cfg.get("max_concurrent_positions", 2)
+            gates = [
+                {"label": f"shares ≥ 100",        "passed": snap.shares_held >= 100,                       "detail": f"held={snap.shares_held}"},
+                {"label": f"positions < {max_pos}","passed": open_cc < max_pos,                             "detail": f"open={open_cc}"},
+                {"label": "regime ≠ high_vol",     "passed": snap.market_regime != "high_vol",              "detail": f"regime={snap.market_regime}"},
+                {"label": f"IV rank ≥ {min_iv}",   "passed": snap.options_context.iv_rank >= min_iv,        "detail": f"iv_rank={snap.options_context.iv_rank:.0f}"},
+                {"label": f"RSI ≤ {max_rsi}",      "passed": snap.technicals.rsi <= max_rsi,               "detail": f"rsi={snap.technicals.rsi:.0f}"},
+            ]
+            all_pass = all(g["passed"] for g in gates)
+            if all_pass:
+                strat  = next((s for s in self._registry._strategies if s.name == "covered_call"), None)
+                reason = strat.last_skip_reason if strat else ""
+                result = f"skip:{reason}" if reason else "signal"
+            else:
+                result = f"skip:{next(g['label'] for g in gates if not g['passed'])} failed"
+        else:
+            gates  = []
+            result = "disabled"
+        strategies_data.append({"strategy": "covered_call",     "enabled": cc_on, "gates": gates, "result": result})
+
+        # ── Bear call spread ──────────────────────────────────────
+        bcs_cfg = self._config.get("strategies", {}).get("bear_call_spread", {})
+        bcs_on  = bcs_cfg.get("enabled", True)
+        if bcs_on:
+            min_iv    = bcs_cfg.get("min_iv_rank", 35)
+            min_rsi   = bcs_cfg.get("min_rsi_for_spread", 45)
+            min_pct_b = bcs_cfg.get("min_pct_b", 0.40)
+            max_pos   = bcs_cfg.get("max_concurrent_positions", 3)
+            allowed   = bcs_cfg.get("allowed_regimes", ["bear", "neutral"])
+            gates = [
+                {"label": f"positions < {max_pos}",      "passed": open_bcs < max_pos,                        "detail": f"open={open_bcs}"},
+                {"label": f"regime in {allowed}",         "passed": snap.market_regime in allowed,             "detail": f"regime={snap.market_regime}"},
+                {"label": f"IV rank ≥ {min_iv}",          "passed": snap.options_context.iv_rank >= min_iv,    "detail": f"iv_rank={snap.options_context.iv_rank:.0f}"},
+                {"label": f"RSI ≥ {min_rsi}",             "passed": snap.technicals.rsi >= min_rsi,            "detail": f"rsi={snap.technicals.rsi:.0f}"},
+                {"label": f"%B ≥ {min_pct_b}",            "passed": snap.technicals.pct_b >= min_pct_b,        "detail": f"%B={snap.technicals.pct_b:.2f}"},
+            ]
+            all_pass = all(g["passed"] for g in gates)
+            if all_pass:
+                strat  = next((s for s in self._registry._strategies if s.name == "bear_call_spread"), None)
+                reason = strat.last_skip_reason if strat else ""
+                result = f"skip:{reason}" if reason else "signal"
+            else:
+                result = f"skip:{next(g['label'] for g in gates if not g['passed'])} failed"
+        else:
+            gates  = []
+            result = "disabled"
+        strategies_data.append({"strategy": "bear_call_spread", "enabled": bcs_on, "gates": gates, "result": result})
+
+        # ── Bull put spread ───────────────────────────────────────
+        bps_cfg = self._config.get("strategies", {}).get("bull_put_spread", {})
+        bps_on  = bps_cfg.get("enabled", True)
+        if bps_on:
+            min_iv    = bps_cfg.get("min_iv_rank", 35)
+            min_rsi   = bps_cfg.get("min_rsi_floor", 35)
+            max_rsi   = bps_cfg.get("max_rsi_ceiling", 65)
+            min_pct_b = bps_cfg.get("min_pct_b", 0.20)
+            max_pos   = bps_cfg.get("max_concurrent_positions", 3)
+            allowed   = bps_cfg.get("allowed_regimes", ["bull", "neutral"])
+            gates = [
+                {"label": f"positions < {max_pos}",      "passed": open_bps < max_pos,                        "detail": f"open={open_bps}"},
+                {"label": f"regime in {allowed}",         "passed": snap.market_regime in allowed,             "detail": f"regime={snap.market_regime}"},
+                {"label": f"IV rank ≥ {min_iv}",          "passed": snap.options_context.iv_rank >= min_iv,    "detail": f"iv_rank={snap.options_context.iv_rank:.0f}"},
+                {"label": f"RSI ≥ {min_rsi}",             "passed": snap.technicals.rsi >= min_rsi,            "detail": f"rsi={snap.technicals.rsi:.0f}"},
+                {"label": f"RSI ≤ {max_rsi}",             "passed": snap.technicals.rsi <= max_rsi,            "detail": f"rsi={snap.technicals.rsi:.0f}"},
+                {"label": f"%B ≥ {min_pct_b}",            "passed": snap.technicals.pct_b >= min_pct_b,        "detail": f"%B={snap.technicals.pct_b:.2f}"},
+            ]
+            all_pass = all(g["passed"] for g in gates)
+            if all_pass:
+                strat  = next((s for s in self._registry._strategies if s.name == "bull_put_spread"), None)
+                reason = strat.last_skip_reason if strat else ""
+                result = f"skip:{reason}" if reason else "signal"
+            else:
+                result = f"skip:{next(g['label'] for g in gates if not g['passed'])} failed"
+        else:
+            gates  = []
+            result = "disabled"
+        strategies_data.append({"strategy": "bull_put_spread",  "enabled": bps_on, "gates": gates, "result": result})
+
+        return strategies_data
+
+    def _build_scan_data(self, snapshots, signals, ranked, results, elapsed: float) -> dict:
+        """
+        Assemble a JSON-serialisable dict from the completed scan cycle.
+        Written to data/scan_results.json after every _scan_job() run.
+        """
+        ET = ZoneInfo("America/New_York")
+        now_et = datetime.now(ET)
+
+        # Per-symbol market data
+        symbols_out = []
+        for snap in snapshots:
+            strategies = []
+            try:
+                strategies = self._build_gate_data(snap)
+            except Exception:
+                pass
+
+            symbols_out.append({
+                "symbol":       snap.symbol,
+                "spot_price":   round(snap.spot_price, 2),
+                "regime":       snap.market_regime,
+                "vix":          round(snap.vix, 2),
+                "rsi":          round(snap.technicals.rsi, 1),
+                "pct_b":        round(snap.technicals.pct_b, 3),
+                "macd":         round(snap.technicals.macd, 3),
+                "iv_rank":      round(snap.options_context.iv_rank, 1),
+                "shares_held":  snap.shares_held,
+                "next_earnings_days": snap.days_to_earnings,
+                "expiries_available": len(snap.options_context.available_expiries or []),
+                "strategies":   strategies,
+            })
+
+        # Ranked candidates
+        # Build outcome lookup from TradeResult list: signal → outcome string
+        outcome_map: dict = {}
+        executed_ids: list = []
+        for r in results:
+            key = id(r.signal)
+            if r.executed:
+                outcome_map[key] = "executed"
+                if r.trade_id:
+                    executed_ids.append(r.trade_id)
+            elif r.approved:
+                outcome_map[key] = "approved_not_filled"
+            else:
+                outcome_map[key] = f"blocked:{r.reject_reason or 'guard'}"
+
+        candidates_out = []
+        for rs in ranked:
+            sig = rs.signal
+            candidates_out.append({
+                "rank":         rs.rank,
+                "symbol":       sig.symbol,
+                "strategy":     sig.strategy_name,
+                "iv_rank":      round(sig.iv_rank, 1),
+                "buffer_pct":   round(sig.buffer_pct, 2) if sig.buffer_pct else None,
+                "reward_risk":  round(sig.reward_risk, 3) if sig.reward_risk else None,
+                "score":        round(rs.score, 4) if hasattr(rs, "score") else None,
+                "net_credit":   round(sig.net_credit, 4),
+                "expiry":       sig.expiry,
+                "dte":          sig.dte,
+                "outcome":      outcome_map.get(id(sig), "skipped"),
+            })
+
+        return {
+            "scan_timestamp":    now_et.isoformat(),
+            "scan_type":         "morning",
+            "scan_number":       self._scan_count,
+            "elapsed_seconds":   round(elapsed, 1),
+            "symbols_scanned":   len(snapshots),
+            "signals_found":     len(signals),
+            "signals_executed":  len(executed_ids),
+            "executed_trade_ids": executed_ids,
+            "symbols":           symbols_out,
+            "candidates":        candidates_out,
+        }
+
+    def _write_scan_results(self, data: dict) -> None:
+        """Write scan_results.json to the data/ directory (same folder as the ledger DB)."""
+        db_path = self._config.get("paper_ledger", {}).get("db_path", "data/paper_trades.db")
+        out_path = Path(db_path).parent / "scan_results.json"
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(out_path, "w") as f:
+            json.dump(data, f, indent=2, default=str)
+        logger.debug(f"[SCAN JOB] scan_results.json written → {out_path}")
+
+    def _write_positions_mark(self, summary: list) -> None:
+        """Persist live mark prices and P&L to positions_mark.json for the dashboard.
+
+        Called by _monitor_job every ~5 min during market hours.
+        Dashboard /positions reads this to populate the Current and P&L columns.
+        Each mark entry: id, symbol, current_price, unrealised_pnl, pnl_pct, exit_signal, as_of.
+        """
+        ET = ZoneInfo("America/New_York")
+        now_str = datetime.now(ET).isoformat()
+        marks = [
+            {
+                "id":             pos.get("id"),
+                "symbol":         pos.get("symbol"),
+                "current_price":  pos.get("current_price"),
+                "unrealised_pnl": pos.get("unrealised_pnl"),
+                "pnl_pct":        pos.get("pnl_pct"),
+                "exit_signal":    pos.get("exit_signal"),
+                "as_of":          now_str,
+            }
+            for pos in summary
+        ]
+        db_path  = self._config.get("paper_ledger", {}).get("db_path", "data/paper_trades.db")
+        out_path = Path(db_path).parent / "positions_mark.json"
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(out_path, "w") as fh:
+            json.dump({"updated_at": now_str, "marks": marks}, fh, indent=2, default=str)
+        logger.debug(f"[MONITOR] positions_mark.json written -> {out_path}")
 
     # ── INTRADAY RESCAN ──────────────────────────────────────────
 
@@ -798,6 +1177,18 @@ class BotScheduler:
             f"{sum(1 for r in results if r.executed)} executed"
         )
 
+        # -- Persist intraday results for dashboard /scan page --
+        try:
+            ranked         = self._manager._ranker.rank(signals)
+            intraday_snaps = list(self._morning_snapshots.values())
+            scan_data      = self._build_scan_data(
+                intraday_snaps, signals, ranked, results, 0.0
+            )
+            scan_data["scan_type"] = "intraday"
+            self._write_scan_results(scan_data)
+        except Exception as _ie:
+            logger.warning(f"[INTRADAY] Could not write scan_results.json: {_ie}")
+
     # ── IV JOB ───────────────────────────────────────────────────
 
     def _iv_job(self) -> None:
@@ -814,7 +1205,14 @@ class BotScheduler:
                 if not expiries:
                     print(f"  ⚠️  {symbol}: no expiries returned")
                     continue
-                chain = self._moomoo.get_option_chain(symbol, expiries[0], "CALL")
+                # Skip any already-expired expiries (MooMoo may return
+                # yesterday's weekly at position [0] after close/weekend)
+                today_str = date.today().isoformat()
+                future_expiries = [e for e in expiries if e > today_str]
+                if not future_expiries:
+                    print(f"  ⚠️  {symbol}: no future expiries available")
+                    continue
+                chain = self._moomoo.get_option_chain(symbol, future_expiries[0], "CALL")
                 if chain is None or len(chain) == 0:
                     print(f"  ⚠️  {symbol}: empty chain")
                     continue
@@ -843,7 +1241,7 @@ class BotScheduler:
                 if len(iv_vals) == 0:
                     print(f"  ⚠️  {symbol}: IV=0 — Greeks not settled (market may be closed)")
                     continue
-                atm_iv = float(iv_vals.mean()) * 100   # MooMoo stores as decimal (0.25 = 25%)
+                atm_iv = float(iv_vals.mean())   # MooMoo option_iv already returns percentage (e.g. 35.0 = 35%)
                 if atm_iv and atm_iv > 0:
                     self._iv_calculator.store_daily_iv(symbol, atm_iv)
                     days = self._iv_calculator.get_days_stored(symbol) if hasattr(self._iv_calculator, "get_days_stored") else "?"

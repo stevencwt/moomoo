@@ -34,12 +34,14 @@ Configuration (under position_monitor):
     dte_close_threshold  : 21
 """
 
-from datetime import datetime, time as dtime
-from typing import List, Dict, Optional, Any
+from datetime import datetime, date, time as dtime, timedelta
+from typing import List, Dict, Optional
 from zoneinfo import ZoneInfo
 
 from src.execution.paper_ledger import PaperLedger
 from src.execution.trade_manager import TradeManager
+from src.connectors.moomoo_connector import MooMooConnector
+from src.connectors.yfinance_connector import YFinanceConnector
 from src.monitoring.exit_evaluator import ExitEvaluator, ExitDecision
 from src.logger import get_logger
 
@@ -62,14 +64,16 @@ class PositionMonitor:
         config:        dict,
         ledger:        PaperLedger,
         trade_manager: TradeManager,
-        data_connector: Any,
+        moomoo:        MooMooConnector,
         evaluator:     ExitEvaluator,
+        yfinance:      YFinanceConnector = None,   # optional — provides spot + VIX at close
     ):
         self._config        = config
         self._ledger        = ledger
         self._trade_manager = trade_manager
-        self._moomoo        = data_connector   # any connector with get_option_snapshot()
+        self._moomoo        = moomoo
         self._evaluator     = evaluator
+        self._yfinance      = yfinance   # None = spot_price/VIX not captured at close
 
         # Track consecutive price fetch failures per trade
         self._price_failures: Dict[int, int] = {}
@@ -77,7 +81,10 @@ class PositionMonitor:
             "position_monitor", {}
         ).get("max_price_failures", 3)
 
-        logger.info("PositionMonitor initialised")
+        logger.info(
+            f"PositionMonitor initialised | "
+            f"exit_context={'full' if yfinance else 'partial (no yfinance)'}"
+        )
 
     # ── Public API ────────────────────────────────────────────────
 
@@ -147,7 +154,6 @@ class PositionMonitor:
                 max_profit=    trade["net_credit"] * 100,
                 expiry=        trade["expiry"],
                 current_price= current_price,
-                opened_at=     trade.get("opened_at"),
             )
             summary.append({
                 **trade,
@@ -199,7 +205,6 @@ class PositionMonitor:
             max_profit=    trade["net_credit"] * 100,
             expiry=        trade["expiry"],
             current_price= current_price,
-            opened_at=     trade.get("opened_at"),
         )
 
         if not decision.should_exit:
@@ -208,14 +213,34 @@ class PositionMonitor:
         # Determine close_reason for ledger
         close_reason = self._map_reason(decision.reason)
 
-        # Execute close via TradeManager
-        close_price = current_price if decision.reason != "expired_worthless" else 0.0
-        pnl         = self._trade_manager.close_trade(
-            trade_id=      trade_id,
-            close_price=   close_price,
-            close_reason=  close_reason,
-            symbol=        trade["symbol"],
-            strategy_name= trade["strategy_name"],
+        # ── Gather exit context ───────────────────────────────────
+        close_price          = current_price if decision.reason != "expired_worthless" else 0.0
+        dte_at_close         = self._compute_dte(trade["expiry"])
+        spot_price_at_close  = None
+        vix_at_close         = None
+
+        if self._yfinance is not None:
+            try:
+                spot_price_at_close = self._yfinance.get_current_price(trade["symbol"])
+            except Exception as e:
+                logger.debug(f"Could not fetch spot price at close for {trade['symbol']}: {e}")
+            try:
+                vix_at_close = self._yfinance.get_current_vix()
+            except Exception as e:
+                logger.debug(f"Could not fetch VIX at close: {e}")
+
+        # Execute close via TradeManager (exit context passed through to ledger)
+        pnl = self._trade_manager.close_trade(
+            trade_id=            trade_id,
+            close_price=         close_price,
+            close_reason=        close_reason,
+            symbol=              trade["symbol"],
+            strategy_name=       trade["strategy_name"],
+            spot_price_at_close= spot_price_at_close,
+            dte_at_close=        dte_at_close,
+            vix_at_close=        vix_at_close,
+            # iv_rank_at_close: not fetched here (requires full chain evaluation)
+            # — captured by the IV collection job at 16:05 ET if needed
         )
 
         action = {
@@ -296,9 +321,18 @@ class PositionMonitor:
             "expired":           "manual",          # ITM expiry — manual handling
             "stop_loss":         "stop_loss",
             "take_profit":       "take_profit",
-            "dte_close":         "take_profit",     # Treat as take_profit for ledger
+            "dte_close":         "dte_close",       # Phase 1: valid reason in ledger
         }
         return mapping.get(exit_reason, "manual")
+
+    @staticmethod
+    def _compute_dte(expiry: str) -> int:
+        """Compute days to expiry remaining from today."""
+        try:
+            expiry_date = date.fromisoformat(expiry)
+            return max(0, (expiry_date - date.today()).days)
+        except Exception:
+            return None
 
     @staticmethod
     def _is_market_hours() -> bool:

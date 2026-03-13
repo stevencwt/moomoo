@@ -20,7 +20,6 @@ It simply produces a complete, frozen MarketSnapshot for each symbol.
 Strategies then evaluate the snapshot independently.
 """
 
-import time
 from datetime import datetime, date
 from typing import List, Optional, Dict
 
@@ -314,15 +313,8 @@ class MarketScanner:
             return 0.0, 50.0
 
         try:
-            # Use nearest expiry that has NOT yet expired (guard against
-            # MooMoo returning yesterday's weekly expiry at position [0]
-            # after close or over a weekend).
-            today_str = date.today().isoformat()
-            future_expiries = [e for e in available_expiries if e > today_str]
-            if not future_expiries:
-                logger.warning(f"{symbol}: No future expiries available (all expired)")
-                return 0.0, 50.0
-            nearest_expiry = future_expiries[0]
+            # Use nearest expiry for ATM IV
+            nearest_expiry = available_expiries[0]
             chain = self._moomoo.get_option_chain(symbol, nearest_expiry, "CALL")
 
             # Find ATM strike (nearest to spot)
@@ -355,10 +347,6 @@ class MarketScanner:
                     f"for reliable signals."
                 )
 
-            # Brief pause so the strategy's own chain fetch (fired
-            # immediately after scan_symbol returns) doesn't collide
-            # with this one — MooMoo rate limit: 10 requests / 30s
-            time.sleep(1.0)
             return atm_iv, iv_rank
 
         except Exception as e:
