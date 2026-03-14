@@ -14,7 +14,7 @@ Design principles:
 
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 
 @dataclass(frozen=True)
@@ -79,6 +79,7 @@ class MarketSnapshot:
     days_to_earnings: Optional[int]
     shares_held:      int
     open_positions:   int
+    regime_v2:        Optional[Dict] = None  # Full output from regime-detection module (None if not installed)
 
     def __post_init__(self):
         valid_regimes = {"bull", "bear", "neutral", "high_vol"}

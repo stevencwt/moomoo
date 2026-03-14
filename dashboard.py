@@ -95,6 +95,8 @@ BASE = """
          href="/stats">Stats</a>
       <a class="nav-link {% if active=='scan'      %}text-white{% else %}text-secondary{% endif %}"
          href="/scan">Scan</a>
+      <a class="nav-link {% if active=='analytics' %}text-white{% else %}text-secondary{% endif %}"
+         href="/analytics">Analytics</a>
     </div>
     <span class="refresh-note">auto-refresh {{ refresh }}s</span>
   </div>
@@ -178,7 +180,7 @@ def _ledger_data():
     """Return (stats, open_trades, closed_trades) from the live ledger."""
     stats  = _ledger.get_statistics()
     open_t = _ledger.get_open_trades()
-    closed = _ledger.get_closed_trades(limit=200)
+    closed = _ledger.get_closed_trades()
     return stats, open_t, closed
 
 
@@ -676,6 +678,677 @@ STATS_TMPL = BASE.replace("{% block content %}{% endblock %}", """
 </div>
 {% endblock %}
 """)
+
+
+# ── Analytics data ────────────────────────────────────────────────────────────
+
+def _analytics_data() -> dict:
+    """
+    Run all analytics SQL queries directly against the DB and return a dict
+    of named result sets for the /analytics template.
+    Each section is a list of dicts (column → value).
+    Sections with no data return [].
+    """
+    import sqlite3 as _sq
+
+    db_path = _ledger._db_path
+    conn = _sq.connect(db_path)
+    conn.row_factory = _sq.Row
+
+    def q(sql, params=()):
+        try:
+            return [dict(r) for r in conn.execute(sql, params).fetchall()]
+        except Exception:
+            return []
+
+    def q1(sql, params=()):
+        rows = q(sql, params)
+        return rows[0] if rows else {}
+
+    # ── Summary counts for coverage badges ──────────────────────────────────
+    coverage_cols = [
+        ("short_strike",    "Short Strike"),
+        ("atm_iv_at_open",  "ATM IV @ Open"),
+        ("theta_at_open",   "Theta @ Open"),
+        ("signal_score",    "Signal Score"),
+        ("entry_type",      "Entry Type"),
+        ("atm_iv_at_close", "ATM IV @ Close"),
+        ("buffer_at_close", "Buffer @ Close"),
+        ("spot_change_pct", "Spot Δ%"),
+        ("rsi_at_close",    "RSI @ Close"),
+    ]
+    total_closed = (q1("SELECT COUNT(*) AS n FROM paper_trades WHERE status IN ('closed','expired')") or {}).get("n", 0) or 0
+    coverage = []
+    for col, label in coverage_cols:
+        n = (q1(f"SELECT COUNT(*) AS n FROM paper_trades WHERE status IN ('closed','expired') AND {col} IS NOT NULL") or {}).get("n", 0) or 0
+        coverage.append({
+            "label": label,
+            "n": n,
+            "total": total_closed,
+            "pct": round(n / total_closed * 100) if total_closed else 0,
+        })
+
+    result = {
+        "total_closed": total_closed,
+        "coverage":     coverage,
+
+        # 1 — Exit type
+        "exit_type": q("""
+            SELECT close_reason,
+                   COUNT(*) AS trades,
+                   SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END) AS wins,
+                   ROUND(AVG(pnl), 2) AS avg_pnl,
+                   ROUND(SUM(pnl), 2) AS total_pnl,
+                   ROUND(AVG(pct_premium_captured), 1) AS avg_captured
+            FROM paper_trades
+            WHERE status IN ('closed','expired') AND pnl IS NOT NULL
+            GROUP BY close_reason ORDER BY avg_pnl DESC
+        """),
+
+        # 2 — Symbol performance
+        "by_symbol": q("""
+            SELECT REPLACE(symbol,'US.','') AS sym,
+                   COUNT(*) AS trades,
+                   SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END) AS wins,
+                   ROUND(AVG(pnl), 2) AS avg_pnl,
+                   ROUND(SUM(pnl), 2) AS total_pnl,
+                   ROUND(AVG(days_held), 1) AS avg_days,
+                   ROUND(AVG(buffer_pct), 1) AS avg_buffer
+            FROM paper_trades
+            WHERE status IN ('closed','expired') AND pnl IS NOT NULL
+            GROUP BY symbol ORDER BY avg_pnl DESC
+        """),
+
+        # 3 — IV crush
+        "iv_crush": q("""
+            SELECT REPLACE(symbol,'US.','') AS sym,
+                   ROUND(atm_iv_at_open, 1) AS iv_open,
+                   ROUND(atm_iv_at_close, 1) AS iv_close,
+                   ROUND(atm_iv_at_open - atm_iv_at_close, 1) AS iv_crush,
+                   ROUND((atm_iv_at_open - atm_iv_at_close)
+                         / NULLIF(atm_iv_at_open,0) * 100, 1) AS crush_pct,
+                   ROUND(pct_premium_captured, 1) AS captured,
+                   ROUND(pnl, 2) AS pnl,
+                   CASE WHEN pnl > 0 THEN 1 ELSE 0 END AS win
+            FROM paper_trades
+            WHERE status IN ('closed','expired')
+              AND atm_iv_at_open IS NOT NULL AND atm_iv_at_close IS NOT NULL
+            ORDER BY iv_crush DESC
+        """),
+
+        # 4 — Theta realisation
+        "theta_real": q("""
+            SELECT REPLACE(symbol,'US.','') AS sym,
+                   ROUND(theta_at_open * -100, 2) AS theta_daily,
+                   days_held,
+                   ROUND(theta_at_open * -100 * days_held, 2) AS theta_theoretical,
+                   ROUND(pnl, 2) AS pnl,
+                   ROUND(pnl / NULLIF(theta_at_open * -100 * days_held, 0) * 100, 1) AS realisation_pct,
+                   CASE WHEN pnl > 0 THEN 1 ELSE 0 END AS win
+            FROM paper_trades
+            WHERE status IN ('closed','expired')
+              AND theta_at_open IS NOT NULL AND days_held > 0 AND pnl IS NOT NULL
+            ORDER BY realisation_pct DESC
+        """),
+
+        # 5 — Signal score
+        "signal_score": q("""
+            SELECT REPLACE(symbol,'US.','') AS sym,
+                   ROUND(signal_score, 4) AS score,
+                   entry_type,
+                   ROUND(pct_premium_captured, 1) AS captured,
+                   close_reason,
+                   ROUND(pnl, 2) AS pnl,
+                   CASE WHEN pnl > 0 THEN 1 ELSE 0 END AS win
+            FROM paper_trades
+            WHERE status IN ('closed','expired')
+              AND signal_score IS NOT NULL AND pnl IS NOT NULL
+            ORDER BY score DESC
+        """),
+
+        # 6 — %B zones
+        "pctb_zones": q("""
+            SELECT
+              CASE
+                WHEN pct_b_at_open >= 0.80 THEN '≥0.80 overbought'
+                WHEN pct_b_at_open >= 0.60 THEN '0.60–0.80 upper'
+                WHEN pct_b_at_open >= 0.40 THEN '0.40–0.60 mid'
+                ELSE                             '<0.40 lower'
+              END AS zone,
+              COUNT(*) AS trades,
+              SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END) AS wins,
+              ROUND(AVG(pnl), 2) AS avg_pnl,
+              ROUND(AVG(pct_premium_captured), 1) AS avg_captured
+            FROM paper_trades
+            WHERE status IN ('closed','expired')
+              AND pnl IS NOT NULL AND pct_b_at_open IS NOT NULL
+            GROUP BY zone ORDER BY avg_pnl DESC
+        """),
+
+        # 7 — Near-miss
+        "near_miss": q("""
+            SELECT REPLACE(symbol,'US.','') AS sym,
+                   ROUND(short_strike, 0) AS short_strike,
+                   ROUND(spot_price_at_close, 2) AS spot_close,
+                   ROUND(buffer_at_close, 2) AS buf_close,
+                   ROUND(spot_change_pct, 2) AS spot_chg,
+                   close_reason,
+                   ROUND(pnl, 2) AS pnl
+            FROM paper_trades
+            WHERE status IN ('closed','expired') AND buffer_at_close IS NOT NULL
+            ORDER BY buf_close ASC
+        """),
+
+        # 8 — Entry type
+        "entry_type": q("""
+            SELECT entry_type,
+                   COUNT(*) AS trades,
+                   SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END) AS wins,
+                   ROUND(AVG(pnl), 2) AS avg_pnl,
+                   ROUND(SUM(pnl), 2) AS total_pnl,
+                   ROUND(AVG(pct_premium_captured), 1) AS avg_captured
+            FROM paper_trades
+            WHERE status IN ('closed','expired')
+              AND pnl IS NOT NULL AND entry_type IS NOT NULL
+            GROUP BY entry_type ORDER BY avg_pnl DESC
+        """),
+
+        # 9 — VIX regime
+        "vix_regime": q("""
+            SELECT
+              CASE
+                WHEN vix_at_open < 16 THEN 'VIX <16'
+                WHEN vix_at_open < 20 THEN 'VIX 16-20'
+                WHEN vix_at_open < 25 THEN 'VIX 20-25'
+                WHEN vix_at_open < 30 THEN 'VIX 25-30'
+                ELSE                       'VIX 30+'
+              END AS vix_zone,
+              COUNT(*) AS trades,
+              SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END) AS wins,
+              ROUND(AVG(pnl), 2) AS avg_pnl,
+              ROUND(AVG(pct_premium_captured), 1) AS avg_captured,
+              ROUND(AVG(atm_iv_at_open - atm_iv_at_close), 2) AS avg_iv_crush
+            FROM paper_trades
+            WHERE status IN ('closed','expired')
+              AND pnl IS NOT NULL AND vix_at_open IS NOT NULL
+            GROUP BY vix_zone ORDER BY MIN(vix_at_open)
+        """),
+
+        # 10 — Days held
+        "days_held": q("""
+            SELECT
+              CASE
+                WHEN days_held = 0   THEN '0d same-day'
+                WHEN days_held <= 3  THEN '1-3d'
+                WHEN days_held <= 7  THEN '4-7d'
+                WHEN days_held <= 14 THEN '8-14d'
+                ELSE                      '15d+'
+              END AS bucket,
+              MIN(days_held) AS min_days,
+              COUNT(*) AS trades,
+              SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END) AS wins,
+              ROUND(AVG(pnl), 2) AS avg_pnl,
+              ROUND(AVG(pct_premium_captured), 1) AS avg_captured
+            FROM paper_trades
+            WHERE status IN ('closed','expired')
+              AND pnl IS NOT NULL AND days_held IS NOT NULL
+            GROUP BY bucket ORDER BY min_days
+        """),
+    }
+
+    conn.close()
+    return result
+
+
+ANALYTICS_TMPL = BASE.replace("{% block content %}{% endblock %}", """
+{% block content %}
+
+{# ── Page header ── #}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="text-secondary mb-0">
+    Analytics
+    <span class="badge bg-secondary ms-1">{{ an.total_closed }} closed trades</span>
+  </h5>
+  {% if an.total_closed < 10 %}
+  <div class="alert alert-warning py-1 px-3 mb-0 small">
+    ⚠ {{ an.total_closed }}/10 trades closed — patterns will sharpen at 10+
+  </div>
+  {% endif %}
+</div>
+
+{# ── Data coverage mini-bar ── #}
+<div class="card mb-3">
+  <div class="card-header fw-semibold">Analytics Field Coverage
+    <small class="text-secondary fw-normal ms-2">— fields populated on new trades only; historical trades show —</small>
+  </div>
+  <div class="card-body py-2">
+    <div class="row g-2">
+    {% for c in an.coverage %}
+      <div class="col-6 col-md-4 col-lg-3">
+        <div class="d-flex justify-content-between mb-1" style="font-size:.78rem">
+          <span class="text-secondary">{{ c.label }}</span>
+          <span class="{{ 'gate-pass' if c.pct == 100 else ('gate-warn' if c.pct > 0 else 'text-secondary') }}">
+            {{ c.n }}/{{ c.total }}
+          </span>
+        </div>
+        <div class="progress" style="height:5px">
+          <div class="progress-bar {{ 'bg-success' if c.pct == 100 else ('bg-warning' if c.pct > 0 else 'bg-secondary') }}"
+               style="width:{{ c.pct }}%"></div>
+        </div>
+      </div>
+    {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+
+{# ═══════════════════════════════════════════════════════════ #}
+{# 1 — Exit Type                                               #}
+{# ═══════════════════════════════════════════════════════════ #}
+<div class="col-md-6">
+  <div class="card h-100">
+    <div class="card-header fw-semibold">1 · Exit Type Breakdown</div>
+    <div class="card-body p-0">
+      {% if an.exit_type %}
+      <table class="table table-sm table-dark mb-0">
+        <thead><tr>
+          <th>Exit</th><th>Trades</th><th>Win%</th>
+          <th>Avg P&amp;L</th><th>Total P&amp;L</th><th>Avg Cap%</th>
+        </tr></thead>
+        <tbody>
+        {% for r in an.exit_type %}
+        {% set wr = (r.wins / r.trades * 100) if r.trades else 0 %}
+        <tr>
+          <td>{{ _reason_badge(r.close_reason) | safe }}</td>
+          <td>{{ r.trades }}</td>
+          <td class="{{ 'gate-pass' if wr >= 60 else 'gate-warn' }}">{{ '%.0f'|format(wr) }}%</td>
+          <td>{{ _fmt_pnl(r.avg_pnl) | safe }}</td>
+          <td>{{ _fmt_pnl(r.total_pnl) | safe }}</td>
+          <td>{{ '%.1f%%'|format(r.avg_captured) if r.avg_captured is not none else '—' }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <div class="px-3 py-2" style="font-size:.75rem;color:#8b949e">
+        take_profit exits should dominate avg P&amp;L vs dte_close
+      </div>
+      {% else %}
+        <div class="p-3 text-secondary small">No closed trades yet.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ═══════════════════════════════════════════════════════════ #}
+{# 2 — Symbol Performance                                      #}
+{# ═══════════════════════════════════════════════════════════ #}
+<div class="col-md-6">
+  <div class="card h-100">
+    <div class="card-header fw-semibold">2 · Symbol Performance</div>
+    <div class="card-body p-0">
+      {% if an.by_symbol %}
+      <table class="table table-sm table-dark mb-0">
+        <thead><tr>
+          <th>Symbol</th><th>Trades</th><th>Win%</th>
+          <th>Avg P&amp;L</th><th>Total P&amp;L</th><th>Avg Days</th><th>Avg Buf%</th>
+        </tr></thead>
+        <tbody>
+        {% for r in an.by_symbol %}
+        {% set wr = (r.wins / r.trades * 100) if r.trades else 0 %}
+        <tr>
+          <td><strong>{{ r.sym }}</strong></td>
+          <td>{{ r.trades }}</td>
+          <td class="{{ 'gate-pass' if wr >= 60 else 'gate-warn' }}">{{ '%.0f'|format(wr) }}%</td>
+          <td>{{ _fmt_pnl(r.avg_pnl) | safe }}</td>
+          <td>{{ _fmt_pnl(r.total_pnl) | safe }}</td>
+          <td>{{ r.avg_days if r.avg_days is not none else '—' }}</td>
+          <td class="{{ 'gate-warn' if r.avg_buffer is not none and r.avg_buffer < 3 else '' }}">
+            {{ '%.1f%%'|format(r.avg_buffer) if r.avg_buffer is not none else '—' }}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <div class="px-3 py-2" style="font-size:.75rem;color:#8b949e">
+        Yellow buffer &lt;3% → strikes may be too close for that symbol
+      </div>
+      {% else %}
+        <div class="p-3 text-secondary small">No closed trades yet.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ═══════════════════════════════════════════════════════════ #}
+{# 3 — IV Crush                                                #}
+{# ═══════════════════════════════════════════════════════════ #}
+<div class="col-md-6">
+  <div class="card h-100">
+    <div class="card-header fw-semibold">3 · IV Crush Contribution
+      <span class="badge bg-secondary ms-1" style="font-size:.7rem;font-weight:400">needs atm_iv_at_close</span>
+    </div>
+    <div class="card-body p-0">
+      {% if an.iv_crush %}
+      <table class="table table-sm table-dark mb-0">
+        <thead><tr>
+          <th>Symbol</th><th>IV@Open</th><th>IV@Close</th>
+          <th>Crush</th><th>Crush%</th><th>Cap%</th><th>P&amp;L</th>
+        </tr></thead>
+        <tbody>
+        {% for r in an.iv_crush %}
+        <tr>
+          <td><strong>{{ r.sym }}</strong></td>
+          <td>{{ '%.1f%%'|format(r.iv_open) if r.iv_open is not none else '—' }}</td>
+          <td>{{ '%.1f%%'|format(r.iv_close) if r.iv_close is not none else '—' }}</td>
+          <td class="{{ 'gate-pass' if r.iv_crush is not none and r.iv_crush > 3 else ('pnl-neg' if r.iv_crush is not none and r.iv_crush < 0 else '') }}">
+            {{ '%+.1f%%'|format(r.iv_crush) if r.iv_crush is not none else '—' }}
+          </td>
+          <td>{{ '%.1f%%'|format(r.crush_pct) if r.crush_pct is not none else '—' }}</td>
+          <td>{{ '%.1f%%'|format(r.captured) if r.captured is not none else '—' }}</td>
+          <td>{{ _fmt_pnl(r.pnl) | safe }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <div class="px-3 py-2" style="font-size:.75rem;color:#8b949e">
+        Crush &gt;5% = IV timing adding alpha beyond pure theta decay
+      </div>
+      {% else %}
+        <div class="p-3 text-secondary small">No data — populates once trades with atm_iv_at_close are closed.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ═══════════════════════════════════════════════════════════ #}
+{# 4 — Theta Realisation                                       #}
+{# ═══════════════════════════════════════════════════════════ #}
+<div class="col-md-6">
+  <div class="card h-100">
+    <div class="card-header fw-semibold">4 · Theta Realisation Rate
+      <span class="badge bg-secondary ms-1" style="font-size:.7rem;font-weight:400">needs theta_at_open</span>
+    </div>
+    <div class="card-body p-0">
+      {% if an.theta_real %}
+      <table class="table table-sm table-dark mb-0">
+        <thead><tr>
+          <th>Symbol</th><th>Θ/Day</th><th>Days</th>
+          <th>Θ-Theoretical</th><th>Actual P&amp;L</th><th>Realisation%</th>
+        </tr></thead>
+        <tbody>
+        {% for r in an.theta_real %}
+        <tr>
+          <td><strong>{{ r.sym }}</strong></td>
+          <td class="text-info">${{ '%.2f'|format(r.theta_daily) }}</td>
+          <td>{{ r.days_held }}</td>
+          <td class="text-secondary">${{ '%.2f'|format(r.theta_theoretical) if r.theta_theoretical is not none else '—' }}</td>
+          <td>{{ _fmt_pnl(r.pnl) | safe }}</td>
+          <td class="{{ 'gate-pass' if r.realisation_pct is not none and r.realisation_pct >= 100 else ('gate-warn' if r.realisation_pct is not none and r.realisation_pct >= 60 else 'pnl-neg') }}">
+            {{ '%.0f%%'|format(r.realisation_pct) if r.realisation_pct is not none else '—' }}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <div class="px-3 py-2" style="font-size:.75rem;color:#8b949e">
+        &gt;100% = IV crush added on top of theta &nbsp;|&nbsp; &lt;60% = IV expanded or exited early
+      </div>
+      {% else %}
+        <div class="p-3 text-secondary small">No data — populates once trades with theta_at_open are closed.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ═══════════════════════════════════════════════════════════ #}
+{# 5 — Signal Score vs Outcome                                 #}
+{# ═══════════════════════════════════════════════════════════ #}
+<div class="col-md-6">
+  <div class="card h-100">
+    <div class="card-header fw-semibold">5 · Signal Score vs Outcome
+      <span class="badge bg-secondary ms-1" style="font-size:.7rem;font-weight:400">needs signal_score</span>
+    </div>
+    <div class="card-body p-0">
+      {% if an.signal_score %}
+      <table class="table table-sm table-dark mb-0">
+        <thead><tr>
+          <th>Symbol</th><th>Score</th><th>Type</th>
+          <th>Cap%</th><th>Exit</th><th>P&amp;L</th><th>Result</th>
+        </tr></thead>
+        <tbody>
+        {% for r in an.signal_score %}
+        <tr>
+          <td><strong>{{ r.sym }}</strong></td>
+          <td class="text-warning">{{ '%.4f'|format(r.score) }}</td>
+          <td class="text-secondary" style="font-size:.8rem">{{ r.entry_type or '—' }}</td>
+          <td>{{ '%.1f%%'|format(r.captured) if r.captured is not none else '—' }}</td>
+          <td class="text-secondary" style="font-size:.8rem">{{ r.close_reason or '—' }}</td>
+          <td>{{ _fmt_pnl(r.pnl) | safe }}</td>
+          <td class="{{ 'gate-pass fw-bold' if r.win else 'pnl-neg fw-bold' }}">
+            {{ 'WIN' if r.win else 'LOSS' }}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <div class="px-3 py-2" style="font-size:.75rem;color:#8b949e">
+        High-scored trades should consistently outperform — validates ranking weights
+      </div>
+      {% else %}
+        <div class="p-3 text-secondary small">No data — populates once ranked trades are closed.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ═══════════════════════════════════════════════════════════ #}
+{# 6 — %B Entry Zones                                          #}
+{# ═══════════════════════════════════════════════════════════ #}
+<div class="col-md-6">
+  <div class="card h-100">
+    <div class="card-header fw-semibold">6 · %B Entry Zone vs Outcome</div>
+    <div class="card-body p-0">
+      {% if an.pctb_zones %}
+      <table class="table table-sm table-dark mb-0">
+        <thead><tr>
+          <th>%B Zone at Entry</th><th>Trades</th><th>Win%</th>
+          <th>Avg P&amp;L</th><th>Avg Cap%</th>
+        </tr></thead>
+        <tbody>
+        {% for r in an.pctb_zones %}
+        {% set wr = (r.wins / r.trades * 100) if r.trades else 0 %}
+        <tr>
+          <td><code>{{ r.zone }}</code></td>
+          <td>{{ r.trades }}</td>
+          <td class="{{ 'gate-pass' if wr >= 60 else 'gate-warn' }}">{{ '%.0f'|format(wr) }}%</td>
+          <td>{{ _fmt_pnl(r.avg_pnl) | safe }}</td>
+          <td>{{ '%.1f%%'|format(r.avg_captured) if r.avg_captured is not none else '—' }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <div class="px-3 py-2" style="font-size:.75rem;color:#8b949e">
+        If ≥0.80 zone dominates → consider raising min_pct_b threshold
+      </div>
+      {% else %}
+        <div class="p-3 text-secondary small">No data yet.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ═══════════════════════════════════════════════════════════ #}
+{# 7 — Near-Miss (buffer at close)                             #}
+{# ═══════════════════════════════════════════════════════════ #}
+<div class="col-md-6">
+  <div class="card h-100">
+    <div class="card-header fw-semibold">7 · Near-Miss Analysis
+      <span class="badge bg-secondary ms-1" style="font-size:.7rem;font-weight:400">buffer remaining at close · sorted closest first</span>
+    </div>
+    <div class="card-body p-0">
+      {% if an.near_miss %}
+      <table class="table table-sm table-dark mb-0">
+        <thead><tr>
+          <th>Symbol</th><th>Strike</th><th>Spot@Close</th>
+          <th>Buffer@Close</th><th>Spot Δ%</th><th>Exit</th><th>P&amp;L</th>
+        </tr></thead>
+        <tbody>
+        {% for r in an.near_miss %}
+        <tr>
+          <td><strong>{{ r.sym }}</strong></td>
+          <td>${{ '%.0f'|format(r.short_strike) if r.short_strike is not none else '—' }}</td>
+          <td>${{ '%.2f'|format(r.spot_close) if r.spot_close is not none else '—' }}</td>
+          <td class="{{ 'gate-pass' if r.buf_close is not none and r.buf_close >= 3 else ('gate-warn' if r.buf_close is not none and r.buf_close >= 0 else 'pnl-neg fw-bold') }}">
+            {{ '%+.1f%%'|format(r.buf_close) if r.buf_close is not none else '—' }}
+          </td>
+          <td class="{{ 'pnl-neg' if r.spot_chg is not none and r.spot_chg > 0 else 'pnl-pos' }}">
+            {{ '%+.1f%%'|format(r.spot_chg) if r.spot_chg is not none else '—' }}
+          </td>
+          <td>{{ _reason_badge(r.close_reason) | safe }}</td>
+          <td>{{ _fmt_pnl(r.pnl) | safe }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <div class="px-3 py-2" style="font-size:.75rem;color:#8b949e">
+        Red buffer = spot was above short strike at close · consistently &lt;2% → widen strike selection
+      </div>
+      {% else %}
+        <div class="p-3 text-secondary small">No data — populates once trades with spot_price_at_close are closed.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ═══════════════════════════════════════════════════════════ #}
+{# 8 — Entry Type                                              #}
+{# ═══════════════════════════════════════════════════════════ #}
+<div class="col-md-6">
+  <div class="card h-100">
+    <div class="card-header fw-semibold">8 · Entry Type Comparison
+      <span class="badge bg-secondary ms-1" style="font-size:.7rem;font-weight:400">needs entry_type</span>
+    </div>
+    <div class="card-body p-0">
+      {% if an.entry_type %}
+      <table class="table table-sm table-dark mb-0">
+        <thead><tr>
+          <th>Type</th><th>Trades</th><th>Win%</th>
+          <th>Avg P&amp;L</th><th>Total P&amp;L</th><th>Avg Cap%</th>
+        </tr></thead>
+        <tbody>
+        {% for r in an.entry_type %}
+        {% set wr = (r.wins / r.trades * 100) if r.trades else 0 %}
+        <tr>
+          <td><span class="badge {{ 'bg-primary' if r.entry_type == 'morning_scan' else 'bg-info text-dark' }}">
+            {{ r.entry_type or '—' }}</span></td>
+          <td>{{ r.trades }}</td>
+          <td class="{{ 'gate-pass' if wr >= 60 else 'gate-warn' }}">{{ '%.0f'|format(wr) }}%</td>
+          <td>{{ _fmt_pnl(r.avg_pnl) | safe }}</td>
+          <td>{{ _fmt_pnl(r.total_pnl) | safe }}</td>
+          <td>{{ '%.1f%%'|format(r.avg_captured) if r.avg_captured is not none else '—' }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <div class="px-3 py-2" style="font-size:.75rem;color:#8b949e">
+        Intraday lags morning scan → consider tighter intraday-only thresholds
+      </div>
+      {% else %}
+        <div class="p-3 text-secondary small">No data — populates after first ranked trades close.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ═══════════════════════════════════════════════════════════ #}
+{# 9 — VIX Regime                                              #}
+{# ═══════════════════════════════════════════════════════════ #}
+<div class="col-md-6">
+  <div class="card h-100">
+    <div class="card-header fw-semibold">9 · VIX Regime Correlation</div>
+    <div class="card-body p-0">
+      {% if an.vix_regime %}
+      <table class="table table-sm table-dark mb-0">
+        <thead><tr>
+          <th>VIX Zone</th><th>Trades</th><th>Win%</th>
+          <th>Avg P&amp;L</th><th>Avg Cap%</th><th>Avg IV Crush</th>
+        </tr></thead>
+        <tbody>
+        {% for r in an.vix_regime %}
+        {% set wr = (r.wins / r.trades * 100) if r.trades else 0 %}
+        <tr>
+          <td><code>{{ r.vix_zone }}</code></td>
+          <td>{{ r.trades }}</td>
+          <td class="{{ 'gate-pass' if wr >= 60 else 'gate-warn' }}">{{ '%.0f'|format(wr) }}%</td>
+          <td>{{ _fmt_pnl(r.avg_pnl) | safe }}</td>
+          <td>{{ '%.1f%%'|format(r.avg_captured) if r.avg_captured is not none else '—' }}</td>
+          <td class="{{ 'gate-pass' if r.avg_iv_crush is not none and r.avg_iv_crush > 3 else ('pnl-neg' if r.avg_iv_crush is not none and r.avg_iv_crush < 0 else '') }}">
+            {{ '%+.1f%%'|format(r.avg_iv_crush) if r.avg_iv_crush is not none else '—' }}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <div class="px-3 py-2" style="font-size:.75rem;color:#8b949e">
+        Key question: does VIX 20-25 produce more IV crush than VIX &lt;20?
+      </div>
+      {% else %}
+        <div class="p-3 text-secondary small">No data yet.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ═══════════════════════════════════════════════════════════ #}
+{# 10 — Days Held Distribution                                 #}
+{# ═══════════════════════════════════════════════════════════ #}
+<div class="col-md-6">
+  <div class="card h-100">
+    <div class="card-header fw-semibold">10 · Days Held Distribution</div>
+    <div class="card-body p-0">
+      {% if an.days_held %}
+      <table class="table table-sm table-dark mb-0">
+        <thead><tr>
+          <th>Holding Period</th><th>Trades</th><th>Win%</th>
+          <th>Avg P&amp;L</th><th>Avg Cap%</th>
+        </tr></thead>
+        <tbody>
+        {% for r in an.days_held %}
+        {% set wr = (r.wins / r.trades * 100) if r.trades else 0 %}
+        <tr>
+          <td><code>{{ r.bucket }}</code></td>
+          <td>{{ r.trades }}</td>
+          <td class="{{ 'gate-pass' if wr >= 60 else 'gate-warn' }}">{{ '%.0f'|format(wr) }}%</td>
+          <td>{{ _fmt_pnl(r.avg_pnl) | safe }}</td>
+          <td>{{ '%.1f%%'|format(r.avg_captured) if r.avg_captured is not none else '—' }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <div class="px-3 py-2" style="font-size:.75rem;color:#8b949e">
+        Short holds &lt;3d with losses → stop_loss firing too early?
+      </div>
+      {% else %}
+        <div class="p-3 text-secondary small">No closed trades yet.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+</div>{# end row #}
+{% endblock %}
+""")
+
+
+@app.route("/analytics")
+def analytics_page():
+    an = _analytics_data()
+    return render_template_string(
+        ANALYTICS_TMPL,
+        active="analytics", refresh=REFRESH_SECS,
+        title="Analytics", an=an,
+    )
 
 
 # ── Jinja2 helpers registered as globals ─────────────────────────────────────

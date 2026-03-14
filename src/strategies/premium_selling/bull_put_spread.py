@@ -223,6 +223,20 @@ class BullPutSpreadStrategy(BaseStrategy):
         today  = date.today()
         dte    = (date.fromisoformat(expiry) - today).days
 
+        # ── Analytics: greeks and raw IV from short-leg snapshot ──────────────
+        try:
+            _short_row    = snap_df[snap_df["code"] == str(short_put["code"])]
+            theta_at_open = float(_short_row.iloc[0].get("option_theta", 0)) if len(_short_row) > 0 else None
+            vega_at_open  = float(_short_row.iloc[0].get("option_vega",  0)) if len(_short_row) > 0 else None
+        except Exception:
+            theta_at_open = None
+            vega_at_open  = None
+
+        try:
+            atm_iv_at_open = float(getattr(snapshot.options_context, "atm_iv", None) or 0) or None
+        except Exception:
+            atm_iv_at_open = None
+
         reason = (
             f"Bull put spread opportunity | "
             f"regime={snapshot.market_regime} | "
@@ -260,6 +274,11 @@ class BullPutSpreadStrategy(BaseStrategy):
             spot_price    = round(snapshot.spot_price, 2),
             buffer_pct    = round((snapshot.spot_price - sell_strike) / snapshot.spot_price * 100, 2),
             snapshot      = snapshot,
+            short_strike  = sell_strike,
+            long_strike   = buy_strike,
+            atm_iv_at_open = atm_iv_at_open,
+            theta_at_open = theta_at_open,
+            vega_at_open  = vega_at_open,
         )
 
         self._logger.info(

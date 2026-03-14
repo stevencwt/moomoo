@@ -37,6 +37,10 @@ class IVRankCalculator:
     Stores daily ATM IV and computes rolling IV Rank.
     """
 
+    # Expose module-level constant as class attribute so callers can use
+    # either IVRankCalculator.MIN_DAYS_RELIABLE or the module constant.
+    MIN_DAYS_RELIABLE = MIN_DAYS_RELIABLE
+
     def __init__(self, db_path: str = "data/iv_history.db"):
         self._db_path = db_path
         os.makedirs(os.path.dirname(db_path), exist_ok=True)

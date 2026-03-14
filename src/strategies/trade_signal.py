@@ -111,6 +111,16 @@ class TradeSignal:
     snapshot:       Optional[Any]   = None   # MarketSnapshot that triggered this signal
                                              # forwarded to record_open() for entry context
 
+    # ── Analytics fields (populated at signal-generation time) ────
+    # Optional with defaults — all existing callers continue to work unchanged.
+    short_strike:   Optional[float] = None   # numeric strike of short leg (e.g. 627.0)
+    long_strike:    Optional[float] = None   # numeric strike of long leg (spreads only)
+    atm_iv_at_open: Optional[float] = None   # raw ATM IV % at open (e.g. 35.2) — not the rank
+    theta_at_open:  Optional[float] = None   # short leg theta: daily $ decay per contract
+    vega_at_open:   Optional[float] = None   # short leg vega: $ change per 1% IV move
+    signal_score:   Optional[float] = None   # ranker composite score (0–1); injected by TradeManager
+    entry_type:     Optional[str]   = None   # 'morning_scan' | 'intraday'
+
     def __post_init__(self):
         valid_actions = {"OPEN", "CLOSE"}
         if self.action not in valid_actions:

@@ -20,7 +20,6 @@ It simply produces a complete, frozen MarketSnapshot for each symbol.
 Strategies then evaluate the snapshot independently.
 """
 
-import time
 from datetime import datetime, date
 from typing import List, Optional, Dict
 
@@ -29,7 +28,16 @@ from src.market.technical_analyser import TechnicalAnalyser
 from src.market.options_analyser import OptionsAnalyser
 from src.market.iv_rank_calculator import IVRankCalculator
 from src.market.regime_detector import RegimeDetector
-from src.connectors.connector_protocol import BrokerConnector
+try:
+    from src.market.regime_bridge import RegimeBridge
+    _BRIDGE = RegimeBridge()
+except Exception as _e:
+    _BRIDGE = None
+    import logging as _logging
+    _logging.getLogger('market.market_scanner').warning(
+        f'RegimeBridge unavailable: {_e}')
+
+from src.connectors.moomoo_connector import MooMooConnector
 from src.connectors.yfinance_connector import YFinanceConnector
 from src.exceptions import DataError
 from src.logger import get_logger
@@ -45,7 +53,7 @@ class MarketScanner:
     def __init__(
         self,
         config:      Dict,
-        moomoo:      BrokerConnector,
+        moomoo:      MooMooConnector,
         yfinance:    YFinanceConnector,
         tech:        TechnicalAnalyser,
         options:     OptionsAnalyser,
@@ -87,7 +95,10 @@ class MarketScanner:
                     f"regime={snap.market_regime} | "
                     f"IV_rank={snap.options_context.iv_rank:.0f} | "
                     f"%B={snap.technicals.pct_b:.2f} | "
-                    f"RSI={snap.technicals.rsi:.0f}"
+                    f"RSI={snap.technicals.rsi:.0f} | "
+                    f"regime_v2={snap.regime_v2.get('consensus_state','—') if snap.regime_v2 else '—'}/"
+                    f"{snap.regime_v2.get('recommended_logic','—') if snap.regime_v2 else '—'} "
+                    f"(conf={snap.regime_v2.get('confidence_score',0):.2f})" if snap.regime_v2 else ""
                 )
             except Exception as e:
                 logger.error(f"❌ Failed to scan {symbol}: {e}", exc_info=True)
@@ -124,6 +135,17 @@ class MarketScanner:
         vix = self._yfinance.get_current_vix()
         market_regime = self._regime.detect(technicals, vix)
 
+        # ── Step 2b: Regime v2 (HMM/Hurst — additive, non-breaking) ──
+        # Fetch 2y history — HMM needs 200+ clean bars for stable training.
+        # yfinance 60-min cache makes this second fetch nearly free.
+        regime_v2 = None
+        if _BRIDGE is not None:
+            try:
+                ohlcv_long = self._yfinance.get_daily_ohlcv(symbol, period="2y")
+                regime_v2 = _BRIDGE.update(symbol, ohlcv_long)
+            except Exception as _e:
+                logger.debug(f'regime_v2 update skipped for {symbol}: {_e}')
+
         # ── Step 3: Option Expiries ───────────────────────────────
         available_expiries = self._moomoo.get_option_expiries(symbol)
 
@@ -140,27 +162,14 @@ class MarketScanner:
             days_to_earnings = (next_earnings - date.today()).days
 
         # ── Step 6: Shares Held ───────────────────────────────────
-        # In paper mode, config can override shares_held per symbol so that
-        # covered call strategy can fire against real shares you hold.
-        # Set universe.shares_held.US.TSLA: 100 in config.yaml
-        shares_config = (
-            self._config.get("universe", {})
-                        .get("shares_held", {})
-        )
-        if symbol in shares_config:
-            shares_held = int(shares_config[symbol])
-            logger.debug(
-                f"{symbol}: shares_held overridden from config: {shares_held}"
-            )
-        else:
-            shares_held = self._moomoo.get_shares_held(symbol)
+        shares_held = self._moomoo.get_shares_held(symbol)
 
         # ── Step 7: Open Positions ────────────────────────────────
         all_positions = self._moomoo.get_option_positions()
         # Count positions for this symbol
         open_positions = 0
         if len(all_positions) > 0 and "code" in all_positions.columns:
-            ticker = symbol.replace("US.", "").replace("HK.", "")
+            ticker = MooMooConnector.to_yfinance_symbol(symbol)
             open_positions = len(
                 all_positions[all_positions["code"].str.contains(ticker, na=False)]
             )
@@ -182,117 +191,10 @@ class MarketScanner:
             days_to_earnings= days_to_earnings,
             shares_held=      shares_held,
             open_positions=   open_positions,
+            regime_v2=        regime_v2,
         )
 
         return snapshot
-
-
-    def scan_symbol_intraday(
-        self,
-        symbol: str,
-        morning_snapshot: "MarketSnapshot",
-    ) -> "MarketSnapshot":
-        """
-        Lightweight intraday rescan — reuses morning's daily-bar technicals
-        and regime, but fetches fresh spot price, VIX, IV rank, and
-        open-position count.
-
-        This is called every 30 min by the monitor job so that option-chain
-        gates (IV rank, credit, delta, R/R) are evaluated against current
-        market pricing rather than just the 09:35 snapshot.
-
-        Gates that are FIXED (computed from daily bars — won't change today):
-          - RSI, MACD, %B, Bollinger Bands → reused from morning_snapshot
-          - Market regime                  → reused from morning_snapshot
-          - Earnings buffer                → reused from morning_snapshot
-
-        Gates that are REFRESHED every 30 min:
-          - Spot price                     → live via yfinance fast_info
-          - VIX                            → live via yfinance
-          - ATM IV + IV Rank               → live MooMoo snapshot
-          - open_positions count           → live ledger query
-          - shares_held                    → live or config override
-
-        Args:
-            symbol           : MooMoo format e.g. "US.TSLA"
-            morning_snapshot : Snapshot produced by scan_symbol() at 09:35
-
-        Returns:
-            New MarketSnapshot with refreshed pricing data.
-
-        Raises:
-            DataError: If critical live data (spot price) is unavailable.
-        """
-        logger.debug(f"Intraday rescan: {symbol}")
-        now = datetime.now()
-
-        # ── Fresh spot price ──────────────────────────────────────
-        spot_price = self._yfinance.get_current_price(symbol)
-
-        # ── Fresh VIX ─────────────────────────────────────────────
-        try:
-            vix = self._yfinance.get_current_vix()
-        except Exception:
-            vix = morning_snapshot.vix
-
-        # ── Fresh IV + IV Rank ────────────────────────────────────
-        try:
-            atm_iv, iv_rank = self._get_iv_data(
-                symbol,
-                morning_snapshot.options_context.available_expiries,
-                spot_price,
-            )
-        except Exception:
-            atm_iv  = morning_snapshot.options_context.atm_iv
-            iv_rank = morning_snapshot.options_context.iv_rank
-
-        # ── Fresh open-position count ─────────────────────────────
-        try:
-            all_positions = self._moomoo.get_option_positions()
-            if len(all_positions) > 0 and "code" in all_positions.columns:
-                ticker = symbol.replace("US.", "").replace("HK.", "")
-                open_positions = len(
-                    all_positions[
-                        all_positions["code"].str.contains(ticker, na=False)
-                    ]
-                )
-            else:
-                open_positions = 0
-        except Exception:
-            open_positions = morning_snapshot.open_positions
-
-        # ── Shares held (config override or live) ────────────────
-        shares_config = (
-            self._config.get("universe", {}).get("shares_held", {})
-        )
-        if symbol in shares_config:
-            shares_held = int(shares_config[symbol])
-        else:
-            try:
-                shares_held = self._moomoo.get_shares_held(symbol)
-            except Exception:
-                shares_held = morning_snapshot.shares_held
-
-        # ── Re-evaluate regime with fresh VIX + same daily techs ─
-        market_regime = self._regime.detect(morning_snapshot.technicals, vix)
-
-        return MarketSnapshot(
-            symbol=           symbol,
-            timestamp=        now,
-            spot_price=       spot_price,
-            technicals=       morning_snapshot.technicals,
-            vix=              vix,
-            market_regime=    market_regime,
-            options_context=  OptionsContext(
-                iv_rank=            iv_rank,
-                atm_iv=             atm_iv,
-                available_expiries= morning_snapshot.options_context.available_expiries,
-            ),
-            next_earnings=    morning_snapshot.next_earnings,
-            days_to_earnings= morning_snapshot.days_to_earnings,
-            shares_held=      shares_held,
-            open_positions=   open_positions,
-        )
 
     # ── Private Helpers ───────────────────────────────────────────
 
@@ -314,15 +216,8 @@ class MarketScanner:
             return 0.0, 50.0
 
         try:
-            # Use nearest expiry that has NOT yet expired (guard against
-            # MooMoo returning yesterday's weekly expiry at position [0]
-            # after close or over a weekend).
-            today_str = date.today().isoformat()
-            future_expiries = [e for e in available_expiries if e > today_str]
-            if not future_expiries:
-                logger.warning(f"{symbol}: No future expiries available (all expired)")
-                return 0.0, 50.0
-            nearest_expiry = future_expiries[0]
+            # Use nearest expiry for ATM IV
+            nearest_expiry = available_expiries[0]
             chain = self._moomoo.get_option_chain(symbol, nearest_expiry, "CALL")
 
             # Find ATM strike (nearest to spot)
@@ -351,14 +246,10 @@ class MarketScanner:
             if quality == "unavailable":
                 logger.warning(
                     f"{symbol}: IV Rank quality is '{quality}'. "
-                    f"Store daily IV for 30+ days "
+                    f"Store daily IV for {IVRankCalculator.MIN_DAYS_RELIABLE}+ days "
                     f"for reliable signals."
                 )
 
-            # Brief pause so the strategy's own chain fetch (fired
-            # immediately after scan_symbol returns) doesn't collide
-            # with this one — MooMoo rate limit: 10 requests / 30s
-            time.sleep(1.0)
             return atm_iv, iv_rank
 
         except Exception as e:

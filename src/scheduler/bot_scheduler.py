@@ -266,7 +266,17 @@ class BotScheduler:
         # Connect brokers
         self._moomoo.connect()
         if self._exec_connector is not None and self._exec_connector is not self._moomoo:
-            self._exec_connector.connect()
+            try:
+                self._exec_connector.connect()
+            except Exception as _ce:
+                mode = self._config.get('mode', 'paper').lower()
+                if mode == 'paper':
+                    logger.warning(
+                        f"IBKR connection failed (paper mode — continuing without it): {_ce}"
+                    )
+                    self._exec_connector = None
+                else:
+                    raise
 
         self._start_time = datetime.now(ET)
         self._print_startup_banner()
@@ -460,6 +470,20 @@ class BotScheduler:
                 shares_str = f"{snap.shares_held} shares" if snap.shares_held else "no shares"
                 earnings_str = f"{snap.days_to_earnings}d to earnings" if snap.days_to_earnings else "no earnings soon"
 
+                # ── regime_v2 summary (HMM-based, additive) ──
+                r2 = snap.regime_v2 or {}
+                if r2:
+                    r2_cons  = r2.get('consensus_state',  '—')
+                    r2_logic = r2.get('recommended_logic','—')
+                    r2_conf  = r2.get('confidence_score',  0.0)
+                    r2_vol   = r2.get('volatility_regime', '—')
+                    r2_str   = (
+                        f"{r2_cons}/{r2_logic} "
+                        f"(conf={r2_conf:.2f} vol={r2_vol})"
+                    )
+                else:
+                    r2_str = "—"
+
                 _section(snap.symbol)
                 print(
                     f"  Price    ${snap.spot_price:.2f}  │  "
@@ -471,6 +495,7 @@ class BotScheduler:
                     f"MACD {snap.technicals.macd:.2f}  │  "
                     f"IV Rank {snap.options_context.iv_rank:.0f}{iv_note}"
                 )
+                print(f"  Regime v2: {r2_str}")
                 print(
                     f"  {shares_str}  │  "
                     f"{len(snap.options_context.available_expiries)} expiries available  │  "

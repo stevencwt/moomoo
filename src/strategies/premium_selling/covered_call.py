@@ -142,6 +142,20 @@ class CoveredCallStrategy(BaseStrategy):
         expiry_d = date.fromisoformat(expiry)
         dte      = (expiry_d - today).days
 
+        # ── Analytics: greeks and raw IV from short-leg snapshot ──────────────
+        try:
+            _call_row     = snap_df[snap_df["code"] == str(best_call["code"])]
+            theta_at_open = float(_call_row.iloc[0].get("option_theta", 0)) if len(_call_row) > 0 else None
+            vega_at_open  = float(_call_row.iloc[0].get("option_vega",  0)) if len(_call_row) > 0 else None
+        except Exception:
+            theta_at_open = None
+            vega_at_open  = None
+
+        try:
+            atm_iv_at_open = float(getattr(snapshot.options_context, "atm_iv", None) or 0) or None
+        except Exception:
+            atm_iv_at_open = None
+
         reason = (
             f"Covered call opportunity | "
             f"regime={snapshot.market_regime} | "
@@ -177,6 +191,11 @@ class CoveredCallStrategy(BaseStrategy):
             spot_price    = round(snapshot.spot_price, 2),
             buffer_pct    = round((strike - snapshot.spot_price) / snapshot.spot_price * 100, 2),
             snapshot      = snapshot,
+            short_strike  = strike,
+            long_strike   = None,
+            atm_iv_at_open = atm_iv_at_open,
+            theta_at_open = theta_at_open,
+            vega_at_open  = vega_at_open,
         )
 
         self._logger.info(

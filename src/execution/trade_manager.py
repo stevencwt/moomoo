@@ -30,7 +30,7 @@ Live mode requires:
 """
 
 from datetime import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, replace as dc_replace
 from typing import List, Optional
 
 from src.strategies.trade_signal import TradeSignal
@@ -83,7 +83,7 @@ class TradeManager:
 
     # ── Public API ────────────────────────────────────────────────
 
-    def process_signal(self, signal: TradeSignal) -> TradeResult:
+    def process_signal(self, signal: TradeSignal, entry_type: str = "morning_scan", signal_score: Optional[float] = None) -> TradeResult:
         """
         Process a single TradeSignal through the full execution pipeline.
 
@@ -153,11 +153,18 @@ class TradeManager:
             )
 
         # ── Step 4: Record in ledger ──────────────────────────────
+        # Inject analytics fields that are only known at execution time:
+        # signal_score comes from SignalRanker; entry_type from the calling job.
+        # TradeSignal is frozen so we use dataclasses.replace() (zero side effects).
+        signal = dc_replace(
+            signal,
+            signal_score = signal_score,
+            entry_type   = entry_type,
+        )
         trade_id = self._ledger.record_open(
             signal=    signal,
             fill_sell= fill.fill_sell,
             fill_buy=  fill.fill_buy,
-            snapshot=  signal.snapshot,   # Phase 3: entry context (RSI, %B, MACD, VIX)
         )
 
         # ── Step 5: Update portfolio guard state ──────────────────
@@ -180,7 +187,7 @@ class TradeManager:
             timestamp=      datetime.now(),
         )
 
-    def process_signals(self, signals: List[TradeSignal]) -> List[TradeResult]:
+    def process_signals(self, signals: List[TradeSignal], entry_type: str = "morning_scan") -> List[TradeResult]:
         """
         Process a batch of signals using the two-pass rank-then-execute approach.
 
@@ -224,7 +231,11 @@ class TradeManager:
         # ── Pass 2: Walk ranked list through the guard ────────────
         results = []
         for ranked_signal in ranked:
-            result = self.process_signal(ranked_signal.signal)
+            result = self.process_signal(
+                ranked_signal.signal,
+                entry_type   = entry_type,
+                signal_score = ranked_signal.score if self._ranker.is_enabled else None,
+            )
             results.append(result)
 
         executed = sum(1 for r in results if r.executed)
@@ -244,38 +255,49 @@ class TradeManager:
         close_reason:        str,
         symbol:              str,
         strategy_name:       str,
-        # ── Exit context — passed through to PaperLedger ──────────
-        spot_price_at_close: float = None,
-        dte_at_close:        int   = None,
-        iv_rank_at_close:    float = None,
-        vix_at_close:        float = None,
+        # ── Exit analytics ────────────────────────────────────────
+        spot_price_at_close: Optional[float] = None,
+        dte_at_close:        Optional[int]   = None,
+        iv_rank_at_close:    Optional[float] = None,
+        vix_at_close:        Optional[float] = None,
+        atm_iv_at_close:     Optional[float] = None,
+        rsi_at_close:        Optional[float] = None,
+        pct_b_at_close:      Optional[float] = None,
+        commission:          float = 0.0,
     ) -> float:
         """
         Close an existing paper trade.
 
         Args:
-            trade_id:            PaperLedger trade ID
-            close_price:         Net debit to close (0 if expired worthless)
-            close_reason:        "expired_worthless" | "stop_loss" | "take_profit"
-                                 | "dte_close" | "manual"
-            symbol:              MooMoo symbol for portfolio guard update
-            strategy_name:       Strategy that opened the position
-            spot_price_at_close: Underlying spot price at close time
-            dte_at_close:        Days to expiry remaining when closed
-            iv_rank_at_close:    IV Rank at close time
-            vix_at_close:        VIX at close time
+            trade_id:             PaperLedger trade ID
+            close_price:          Net debit to close (0 if expired worthless)
+            close_reason:         "expired_worthless"|"stop_loss"|"take_profit"|"dte_close"|"manual"
+            symbol:               MooMoo symbol for portfolio guard update
+            strategy_name:        Strategy that opened the position
+            spot_price_at_close:  Underlying spot price at close
+            dte_at_close:         Days to expiry remaining at close
+            iv_rank_at_close:     IV Rank at close (0–100)
+            vix_at_close:         VIX at close
+            atm_iv_at_close:      Raw ATM IV % at close (for IV crush measurement)
+            rsi_at_close:         RSI(14) at close
+            pct_b_at_close:       Bollinger %B at close
+            commission:           Brokerage commission (default 0.0 for paper trading)
 
         Returns:
-            Realised P&L
+            Realised gross P&L in dollars.
         """
         pnl = self._ledger.record_close(
             trade_id,
             close_price,
             close_reason,
-            spot_price_at_close= spot_price_at_close,
-            dte_at_close=        dte_at_close,
-            iv_rank_at_close=    iv_rank_at_close,
-            vix_at_close=        vix_at_close,
+            spot_price_at_close = spot_price_at_close,
+            dte_at_close        = dte_at_close,
+            iv_rank_at_close    = iv_rank_at_close,
+            vix_at_close        = vix_at_close,
+            atm_iv_at_close     = atm_iv_at_close,
+            rsi_at_close        = rsi_at_close,
+            pct_b_at_close      = pct_b_at_close,
+            commission          = commission,
         )
         self._guard.record_close(symbol, strategy_name)
 

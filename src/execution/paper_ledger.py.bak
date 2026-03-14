@@ -298,16 +298,6 @@ class PaperLedger:
             cols = [d[0] for d in cursor.description]
             return [dict(zip(cols, row)) for row in cursor.fetchall()]
 
-    def get_trades_opened_on(self, date_str: str) -> List[Dict]:
-        """Return all trades (any status) opened on the given date (YYYY-MM-DD)."""
-        with self._get_conn() as conn:
-            cursor = conn.execute(
-                "SELECT * FROM paper_trades WHERE opened_at LIKE ? ORDER BY opened_at",
-                (f"{date_str}%",),
-            )
-            cols = [d[0] for d in cursor.description]
-            return [dict(zip(cols, row)) for row in cursor.fetchall()]
-
     def get_trade(self, trade_id: int) -> Optional[Dict]:
         """Return a single trade by ID."""
         with self._get_conn() as conn:

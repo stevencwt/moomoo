@@ -215,6 +215,21 @@ class BearCallSpreadStrategy(BaseStrategy):
         today  = date.today()
         dte    = (date.fromisoformat(expiry) - today).days
 
+        # ── Analytics: greeks and raw IV from short-leg snapshot ──────────────
+        # Guard each with try/except — missing fields must never block signal generation.
+        try:
+            _short_row    = snap_df[snap_df["code"] == str(short_call["code"])]
+            theta_at_open = float(_short_row.iloc[0].get("option_theta", 0)) if len(_short_row) > 0 else None
+            vega_at_open  = float(_short_row.iloc[0].get("option_vega",  0)) if len(_short_row) > 0 else None
+        except Exception:
+            theta_at_open = None
+            vega_at_open  = None
+
+        try:
+            atm_iv_at_open = float(getattr(snapshot.options_context, "atm_iv", None) or 0) or None
+        except Exception:
+            atm_iv_at_open = None
+
         reason = (
             f"Bear call spread opportunity | "
             f"regime={snapshot.market_regime} | "
@@ -252,6 +267,11 @@ class BearCallSpreadStrategy(BaseStrategy):
             spot_price    = round(snapshot.spot_price, 2),
             buffer_pct    = round((sell_strike - snapshot.spot_price) / snapshot.spot_price * 100, 2),
             snapshot      = snapshot,
+            short_strike  = sell_strike,
+            long_strike   = buy_strike,
+            atm_iv_at_open = atm_iv_at_open,
+            theta_at_open = theta_at_open,
+            vega_at_open  = vega_at_open,
         )
 
         self._logger.info(
