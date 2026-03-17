@@ -44,7 +44,8 @@ logger = get_logger("connectors.ibkr")
 
 try:
     from ib_insync import (
-        IB, Stock, Option, LimitOrder, ComboLeg, Contract, util
+        IB, Stock, Option, LimitOrder, MarketOrder,
+        StopOrder, ComboLeg, Contract, util
     )
     IB_INSYNC_AVAILABLE = True
 except ImportError:
@@ -461,6 +462,291 @@ class IBKRConnector:
 
     # ── Order Execution ───────────────────────────────────────────
 
+    # ── Stock Order Execution ────────────────────────────────────────────────
+
+    def place_stock_market_order(
+        self,
+        symbol:    str,
+        qty:       int,
+        direction: str,   # "BUY" | "SELL"
+    ) -> str:
+        """
+        Place a market order for a stock.
+
+        Fills immediately at the best available price.
+        Use with caution on illiquid stocks — slippage risk.
+
+        Args:
+            symbol   : Bot format e.g. "US.TSLA"
+            qty      : Number of shares
+            direction: "BUY" or "SELL"
+
+        Returns:
+            Order ID string.
+        """
+        self._ensure_connected()
+        self._guard_live_mode("place_stock_market_order")
+
+        action   = "BUY" if direction.upper() == "BUY" else "SELL"
+        ticker   = self.to_ibkr_symbol(symbol)
+        contract = Stock(ticker, "SMART", "USD")
+        self._ib.qualifyContracts(contract)
+
+        order = MarketOrder(
+            action=action,
+            totalQuantity=qty,
+            account=self._account,
+        )
+
+        logger.info(
+            f"[STOCK] Market order: {action} {qty}x {ticker} @ MKT "
+            f"| account={self._account}"
+        )
+
+        trade    = self._ib.placeOrder(contract, order)
+        self._ib.sleep(1.0)
+
+        order_id = str(trade.order.orderId)
+        status   = trade.orderStatus.status
+        logger.info(
+            f"[STOCK] Market order placed | id={order_id} | status={status}"
+        )
+        return order_id
+
+    def place_stock_limit_order(
+        self,
+        symbol:    str,
+        qty:       int,
+        price:     float,
+        direction: str,   # "BUY" | "SELL"
+        tif:       str = "DAY",   # "DAY" | "GTC" | "IOC"
+    ) -> str:
+        """
+        Place a limit order for a stock.
+
+        Only fills at the specified price or better.
+
+        Args:
+            symbol   : Bot format e.g. "US.TSLA"
+            qty      : Number of shares
+            price    : Limit price per share
+            direction: "BUY" or "SELL"
+            tif      : Time in force — "DAY" (default), "GTC" (good till cancelled),
+                       "IOC" (immediate or cancel)
+
+        Returns:
+            Order ID string.
+        """
+        self._ensure_connected()
+        self._guard_live_mode("place_stock_limit_order")
+
+        action   = "BUY" if direction.upper() == "BUY" else "SELL"
+        ticker   = self.to_ibkr_symbol(symbol)
+        contract = Stock(ticker, "SMART", "USD")
+        self._ib.qualifyContracts(contract)
+
+        order = LimitOrder(
+            action=action,
+            totalQuantity=qty,
+            lmtPrice=round(price, 2),
+            tif=tif.upper(),
+            account=self._account,
+        )
+
+        logger.info(
+            f"[STOCK] Limit order: {action} {qty}x {ticker} @ ${price:.2f} "
+            f"tif={tif} | account={self._account}"
+        )
+
+        trade    = self._ib.placeOrder(contract, order)
+        self._ib.sleep(1.0)
+
+        order_id = str(trade.order.orderId)
+        status   = trade.orderStatus.status
+        logger.info(
+            f"[STOCK] Limit order placed | id={order_id} | status={status}"
+        )
+        return order_id
+
+    def place_stock_stop_order(
+        self,
+        symbol:    str,
+        qty:       int,
+        stop_price: float,
+        direction: str,   # "BUY" | "SELL"
+        tif:       str = "GTC",
+    ) -> str:
+        """
+        Place a stop order for a stock.
+
+        Triggers a market order when price reaches stop_price.
+        Typically used as a stop-loss on an existing position.
+
+        Args:
+            symbol    : Bot format e.g. "US.TSLA"
+            qty       : Number of shares
+            stop_price: Price at which order triggers
+            direction : "BUY" (stop above market) or "SELL" (stop-loss below market)
+            tif       : "GTC" (default) or "DAY"
+
+        Returns:
+            Order ID string.
+        """
+        self._ensure_connected()
+        self._guard_live_mode("place_stock_stop_order")
+
+        action   = "BUY" if direction.upper() == "BUY" else "SELL"
+        ticker   = self.to_ibkr_symbol(symbol)
+        contract = Stock(ticker, "SMART", "USD")
+        self._ib.qualifyContracts(contract)
+
+        order = StopOrder(
+            action=action,
+            totalQuantity=qty,
+            stopPrice=round(stop_price, 2),
+            tif=tif.upper(),
+            account=self._account,
+        )
+
+        logger.info(
+            f"[STOCK] Stop order: {action} {qty}x {ticker} @ stop ${stop_price:.2f} "
+            f"tif={tif} | account={self._account}"
+        )
+
+        trade    = self._ib.placeOrder(contract, order)
+        self._ib.sleep(1.0)
+
+        order_id = str(trade.order.orderId)
+        status   = trade.orderStatus.status
+        logger.info(
+            f"[STOCK] Stop order placed | id={order_id} | status={status}"
+        )
+        return order_id
+
+    def place_stock_stop_limit_order(
+        self,
+        symbol:     str,
+        qty:        int,
+        stop_price: float,
+        limit_price: float,
+        direction:  str,   # "BUY" | "SELL"
+        tif:        str = "GTC",
+    ) -> str:
+        """
+        Place a stop-limit order for a stock.
+
+        Triggers a limit order (not market) when stop_price is reached.
+        Safer than a plain stop order — avoids bad fills in fast markets.
+
+        Args:
+            symbol      : Bot format e.g. "US.TSLA"
+            qty         : Number of shares
+            stop_price  : Price that triggers the order
+            limit_price : Worst acceptable fill price after trigger
+            direction   : "BUY" or "SELL"
+            tif         : "GTC" (default) or "DAY"
+
+        Returns:
+            Order ID string.
+        """
+        self._ensure_connected()
+        self._guard_live_mode("place_stock_stop_limit_order")
+
+        from ib_insync import StopLimitOrder
+
+        action   = "BUY" if direction.upper() == "BUY" else "SELL"
+        ticker   = self.to_ibkr_symbol(symbol)
+        contract = Stock(ticker, "SMART", "USD")
+        self._ib.qualifyContracts(contract)
+
+        order = StopLimitOrder(
+            action=action,
+            totalQuantity=qty,
+            stopPrice=round(stop_price, 2),
+            lmtPrice=round(limit_price, 2),
+            tif=tif.upper(),
+            account=self._account,
+        )
+
+        logger.info(
+            f"[STOCK] Stop-limit order: {action} {qty}x {ticker} "
+            f"stop=${stop_price:.2f} limit=${limit_price:.2f} "
+            f"tif={tif} | account={self._account}"
+        )
+
+        trade    = self._ib.placeOrder(contract, order)
+        self._ib.sleep(1.0)
+
+        order_id = str(trade.order.orderId)
+        status   = trade.orderStatus.status
+        logger.info(
+            f"[STOCK] Stop-limit order placed | id={order_id} | status={status}"
+        )
+        return order_id
+
+    def get_stock_positions(self) -> pd.DataFrame:
+        """
+        Return all open stock positions.
+
+        Returns:
+            DataFrame with columns:
+              symbol, qty, avg_cost, market_price, unrealised_pnl
+            Empty DataFrame if no stock positions.
+        """
+        self._ensure_connected()
+        positions = self._ib.positions(self._account)
+        rows = []
+
+        for pos in positions:
+            if pos.contract.secType == "STK":
+                rows.append({
+                    "symbol":         self.to_bot_symbol(pos.contract.symbol),
+                    "qty":            int(pos.position),
+                    "avg_cost":       round(pos.avgCost, 4),
+                    "market_price":   0.0,   # populated during market hours
+                    "unrealised_pnl": 0.0,
+                })
+
+        return pd.DataFrame(rows) if rows else pd.DataFrame(
+            columns=["symbol", "qty", "avg_cost", "market_price", "unrealised_pnl"]
+        )
+
+    def close_stock_position(
+        self,
+        symbol:    str,
+        qty:       int,
+        order_type: str = "MKT",   # "MKT" | "LMT"
+        limit_price: float = 0.0,
+    ) -> str:
+        """
+        Close (sell) an existing stock position.
+
+        Args:
+            symbol      : Bot format e.g. "US.TSLA"
+            qty         : Shares to sell (must be <= position size)
+            order_type  : "MKT" (market, immediate) or "LMT" (limit)
+            limit_price : Required if order_type="LMT"
+
+        Returns:
+            Order ID string.
+        """
+        self._ensure_connected()
+        self._guard_live_mode("close_stock_position")
+
+        if order_type.upper() == "LMT":
+            if limit_price <= 0:
+                raise ValueError(
+                    "limit_price must be > 0 for LMT close_stock_position"
+                )
+            return self.place_stock_limit_order(
+                symbol=symbol, qty=qty, price=limit_price,
+                direction="SELL", tif="DAY"
+            )
+        else:
+            return self.place_stock_market_order(
+                symbol=symbol, qty=qty, direction="SELL"
+            )
+
     def place_limit_order(
         self,
         contract:  str,
@@ -532,8 +818,10 @@ class IBKRConnector:
         self._guard_live_mode("place_combo_order")
 
         logger.info(
-            f"Placing combo: SELL {sell_contract} | BUY {buy_contract} | "
-            f"qty={qty} | credit=${net_credit:.2f}"
+            f"Placing combo (credit spread): "
+            f"SELL {sell_contract} | BUY {buy_contract} | "
+            f"qty={qty} | credit=${net_credit:.2f} | "
+            f"order=BUY @ $-{net_credit:.2f} (IBKR credit convention)"
         )
 
         sell_c = self._code_to_contract(sell_contract)
@@ -547,24 +835,31 @@ class IBKRConnector:
         combo.currency = "USD"
         combo.exchange = "SMART"
 
-        leg1           = ComboLeg()
-        leg1.conId     = sell_c.conId
-        leg1.ratio     = 1
-        leg1.action    = "SELL"
-        leg1.exchange  = "SMART"
+        leg1              = ComboLeg()
+        leg1.conId        = sell_c.conId
+        leg1.ratio        = 1
+        leg1.action       = "SELL"
+        leg1.exchange     = "SMART"
+        leg1.openClose    = 1   # 1=OPEN — required by some IBKR accounts
 
-        leg2           = ComboLeg()
-        leg2.conId     = buy_c.conId
-        leg2.ratio     = 1
-        leg2.action    = "BUY"
-        leg2.exchange  = "SMART"
+        leg2              = ComboLeg()
+        leg2.conId        = buy_c.conId
+        leg2.ratio        = 1
+        leg2.action       = "BUY"
+        leg2.exchange     = "SMART"
+        leg2.openClose    = 1   # 1=OPEN — required by some IBKR accounts
 
         combo.comboLegs = [leg1, leg2]
 
+        # IBKR credit combo convention (confirmed by IBKR Trades desk):
+        # For a credit spread, place as BUY with NEGATIVE limit price.
+        # BUY at -net_credit means we RECEIVE the credit from the counterparty.
+        # SELL at +price would imply paying a debit, which IBKR flags as riskless
+        # when the combo bid/ask is negative (credit spread market structure).
         order = LimitOrder(
-            action="SELL",
+            action="BUY",
             totalQuantity=qty,
-            lmtPrice=round(net_credit, 2),
+            lmtPrice=round(-abs(net_credit), 2),   # negative = collect credit
             tif="DAY",
             account=self._account,
         )

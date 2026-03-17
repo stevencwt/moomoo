@@ -127,6 +127,18 @@ class BrokerConnector(Protocol):
         """
         ...
 
+    def get_spot_price(self, symbol: str) -> float:
+        """
+        Return current spot price for a symbol.
+
+        Args:
+            symbol: Bot format e.g. "US.TSLA"
+
+        Returns:
+            Current price as float. Raises DataError if unavailable.
+        """
+        ...
+
     def get_shares_held(self, symbol: str) -> int:
         """
         Return number of shares held for a symbol.

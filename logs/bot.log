@@ -55,3 +55,443 @@
 2026-03-17 18:39:02 | INFO     | options_bot.connectors.moomoo  | Quote context closed
 2026-03-17 18:39:02 | INFO     | options_bot.connectors.moomoo  | Trade context closed
 2026-03-17 18:39:02 | INFO     | options_bot.scheduler.bot_scheduler | Scheduler stopped
+2026-03-17 21:06:08 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-17 21:06:08 | INFO     | options_bot.scheduler.bot_scheduler | Building BotScheduler | mode=paper | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-17 21:06:08 | INFO     | options_bot.connectors.broker_factory | Building connectors | data=moomoo | execution=ibkr
+2026-03-17 21:06:08 | INFO     | options_bot.connectors.moomoo  | MooMooConnector initialised | host=127.0.0.1:11111 | trade_env=SIMULATE | mode=paper
+2026-03-17 21:06:08 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=1 | mode=paper
+2026-03-17 21:06:08 | INFO     | options_bot.scheduler.bot_scheduler | Connectors | data=moomoo | execution=ibkr | shared=no
+2026-03-17 21:06:08 | INFO     | options_bot.connectors.yfinance | YFinanceConnector initialised
+2026-03-17 21:06:08 | INFO     | options_bot.market.iv_rank_calculator | IVRankCalculator initialised | db=data/iv_history.db
+2026-03-17 21:06:08 | INFO     | options_bot.market.regime_detector | RegimeDetector | high_vol_vix=25.0 | bull_rsi>=55.0 | bear_rsi<=45.0
+2026-03-17 21:06:08 | INFO     | options_bot.market.options_analyser | OptionsAnalyser | DTE=21-45 | delta=0.2-0.35 | earnings_buffer=7d
+2026-03-17 21:06:08 | INFO     | options_bot.market.market_scanner | MarketScanner initialised | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-17 21:06:08 | INFO     | options_bot.strategies.registry | StrategyRegistry initialised
+2026-03-17 21:06:08 | INFO     | options_bot.strategies.covered_call | Strategy 'covered_call' initialised | enabled=True
+2026-03-17 21:06:08 | INFO     | options_bot.strategies.registry | Registered strategy 'covered_call' | enabled=True | total=1
+2026-03-17 21:06:08 | INFO     | options_bot.strategies.bear_call_spread | Strategy 'bear_call_spread' initialised | enabled=True
+2026-03-17 21:06:08 | INFO     | options_bot.strategies.registry | Registered strategy 'bear_call_spread' | enabled=True | total=2
+2026-03-17 21:06:08 | INFO     | options_bot.strategies.bull_put_spread | Strategy 'bull_put_spread' initialised | enabled=True
+2026-03-17 21:06:08 | INFO     | options_bot.strategies.registry | Registered strategy 'bull_put_spread' | enabled=True | total=3
+2026-03-17 21:06:08 | INFO     | options_bot.execution.portfolio_guard | PortfolioGuard initialised | max_positions=8 | max_risk_pct=5% | max_total_risk_pct=20% | max_trades/day=3 | portfolio=$100,000
+2026-03-17 21:06:08 | INFO     | options_bot.execution.order_router | OrderRouter initialised | mode=paper | fill_timeout=60s
+2026-03-17 21:06:08 | INFO     | options_bot.execution.paper_ledger | PaperLedger initialised | db=data/paper_trades.db
+2026-03-17 21:06:08 | INFO     | options_bot.execution.portfolio_guard | PortfolioGuard restored 4 open position(s) from ledger | trades today=0 (incl. closed/stopped)
+2026-03-17 21:06:08 | INFO     | options_bot.execution.signal_ranker | SignalRanker initialised | enabled=True | weights: iv_rank=0.4 buffer=0.35 rr=0.25
+2026-03-17 21:06:08 | INFO     | options_bot.execution.trade_manager | TradeManager initialised | mode=paper | ranker_enabled=True
+2026-03-17 21:06:08 | INFO     | options_bot.monitoring.exit_evaluator | ExitEvaluator | stop_loss=3.0×credit | min_hold=5d | take_profit=50% | dte_close=21d
+2026-03-17 21:06:08 | INFO     | options_bot.monitoring.position_monitor | PositionMonitor initialised
+2026-03-17 21:06:08 | INFO     | options_bot.monitoring.validation_reporter | ValidationReporter | min_trades=10 | min_win_rate=60% | min_sharpe=0.5
+2026-03-17 21:06:08 | INFO     | options_bot.scheduler.bot_scheduler | All components built successfully
+2026-03-17 21:06:08 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:06:08 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:06:08 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:06:08 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:06:08 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:06:08 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:06:08 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:06:08 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:06:08 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridgePool] 8 symbols | provider=gemini | HTF=2h LTF=30min
+2026-03-17 21:06:08 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] pool initialized | 8 symbols | provider=gemini | HTF=2h LTF=30min
+2026-03-17 21:06:08 | INFO     | options_bot.scheduler.bot_scheduler | BotScheduler initialised | mode=paper | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-17 21:06:08 | INFO     | options_bot.main               | Starting Options Bot | mode=paper | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-17 21:06:08 | INFO     | options_bot.connectors.moomoo  | Connecting to OpenD...
+2026-03-17 21:06:09 | INFO     | options_bot.connectors.moomoo  | Quote context opened
+2026-03-17 21:06:09 | INFO     | options_bot.connectors.moomoo  | Trade context opened
+2026-03-17 21:06:09 | INFO     | options_bot.connectors.moomoo  | ✅ Connected to OpenD successfully
+2026-03-17 21:06:09 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-17 21:06:29 | WARNING  | options_bot.scheduler.bot_scheduler | IBKR connection failed (paper mode — continuing without it): Failed to connect to IBKR TWS/Gateway: 
+2026-03-17 21:06:29 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-17 21:06:29 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-17 21:06:29 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-17 21:06:29 | INFO     | options_bot.scheduler.bot_scheduler | Schedule time conversion: 09:35 ET → 21:35 local (system timezone: +08)
+2026-03-17 21:06:29 | INFO     | options_bot.scheduler.bot_scheduler | Schedule time conversion: 16:05 ET → 04:05 local (system timezone: +08)
+2026-03-17 21:06:29 | INFO     | options_bot.scheduler.bot_scheduler | Schedule time conversion: 16:30 ET → 04:30 local (system timezone: +08)
+2026-03-17 21:06:42 | INFO     | options_bot.scheduler.bot_scheduler | Shutdown signal received (2) — stopping...
+2026-03-17 21:06:42 | INFO     | options_bot.scheduler.bot_scheduler | Scheduler stopping...
+2026-03-17 21:06:42 | INFO     | options_bot.connectors.moomoo  | Quote context closed
+2026-03-17 21:06:42 | INFO     | options_bot.connectors.moomoo  | Trade context closed
+2026-03-17 21:06:42 | INFO     | options_bot.scheduler.bot_scheduler | Scheduler stopped
+2026-03-17 21:09:09 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-17 21:09:09 | INFO     | options_bot.scheduler.bot_scheduler | Building BotScheduler | mode=paper | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-17 21:09:09 | INFO     | options_bot.connectors.broker_factory | Building connectors | data=moomoo | execution=ibkr
+2026-03-17 21:09:09 | INFO     | options_bot.connectors.moomoo  | MooMooConnector initialised | host=127.0.0.1:11111 | trade_env=SIMULATE | mode=paper
+2026-03-17 21:09:09 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=1 | mode=paper
+2026-03-17 21:09:09 | INFO     | options_bot.scheduler.bot_scheduler | Connectors | data=moomoo | execution=ibkr | shared=no
+2026-03-17 21:09:09 | INFO     | options_bot.connectors.yfinance | YFinanceConnector initialised
+2026-03-17 21:09:09 | INFO     | options_bot.market.iv_rank_calculator | IVRankCalculator initialised | db=data/iv_history.db
+2026-03-17 21:09:09 | INFO     | options_bot.market.regime_detector | RegimeDetector | high_vol_vix=25.0 | bull_rsi>=55.0 | bear_rsi<=45.0
+2026-03-17 21:09:09 | INFO     | options_bot.market.options_analyser | OptionsAnalyser | DTE=21-45 | delta=0.2-0.35 | earnings_buffer=7d
+2026-03-17 21:09:09 | INFO     | options_bot.market.market_scanner | MarketScanner initialised | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-17 21:09:09 | INFO     | options_bot.strategies.registry | StrategyRegistry initialised
+2026-03-17 21:09:09 | INFO     | options_bot.strategies.covered_call | Strategy 'covered_call' initialised | enabled=True
+2026-03-17 21:09:09 | INFO     | options_bot.strategies.registry | Registered strategy 'covered_call' | enabled=True | total=1
+2026-03-17 21:09:09 | INFO     | options_bot.strategies.bear_call_spread | Strategy 'bear_call_spread' initialised | enabled=True
+2026-03-17 21:09:09 | INFO     | options_bot.strategies.registry | Registered strategy 'bear_call_spread' | enabled=True | total=2
+2026-03-17 21:09:09 | INFO     | options_bot.strategies.bull_put_spread | Strategy 'bull_put_spread' initialised | enabled=True
+2026-03-17 21:09:09 | INFO     | options_bot.strategies.registry | Registered strategy 'bull_put_spread' | enabled=True | total=3
+2026-03-17 21:09:09 | INFO     | options_bot.execution.portfolio_guard | PortfolioGuard initialised | max_positions=8 | max_risk_pct=5% | max_total_risk_pct=20% | max_trades/day=3 | portfolio=$100,000
+2026-03-17 21:09:09 | INFO     | options_bot.execution.order_router | OrderRouter initialised | mode=paper | fill_timeout=60s
+2026-03-17 21:09:09 | INFO     | options_bot.execution.paper_ledger | PaperLedger initialised | db=data/paper_trades.db
+2026-03-17 21:09:09 | INFO     | options_bot.execution.portfolio_guard | PortfolioGuard restored 4 open position(s) from ledger | trades today=0 (incl. closed/stopped)
+2026-03-17 21:09:09 | INFO     | options_bot.execution.signal_ranker | SignalRanker initialised | enabled=True | weights: iv_rank=0.4 buffer=0.35 rr=0.25
+2026-03-17 21:09:09 | INFO     | options_bot.execution.trade_manager | TradeManager initialised | mode=paper | ranker_enabled=True
+2026-03-17 21:09:09 | INFO     | options_bot.monitoring.exit_evaluator | ExitEvaluator | stop_loss=3.0×credit | min_hold=5d | take_profit=50% | dte_close=21d
+2026-03-17 21:09:09 | INFO     | options_bot.monitoring.position_monitor | PositionMonitor initialised
+2026-03-17 21:09:09 | INFO     | options_bot.monitoring.validation_reporter | ValidationReporter | min_trades=10 | min_win_rate=60% | min_sharpe=0.5
+2026-03-17 21:09:09 | INFO     | options_bot.scheduler.bot_scheduler | All components built successfully
+2026-03-17 21:09:09 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:09:09 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:09:09 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:09:09 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:09:09 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:09:09 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:09:09 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:09:09 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:09:09 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridgePool] 8 symbols | provider=gemini | HTF=2h LTF=30min
+2026-03-17 21:09:09 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] pool initialized | 8 symbols | provider=gemini | HTF=2h LTF=30min
+2026-03-17 21:09:09 | INFO     | options_bot.scheduler.bot_scheduler | BotScheduler initialised | mode=paper | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-17 21:09:09 | INFO     | options_bot.main               | Starting Options Bot | mode=paper | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-17 21:09:09 | INFO     | options_bot.connectors.moomoo  | Connecting to OpenD...
+2026-03-17 21:09:09 | INFO     | options_bot.connectors.moomoo  | Quote context opened
+2026-03-17 21:09:09 | INFO     | options_bot.connectors.moomoo  | Trade context opened
+2026-03-17 21:09:09 | INFO     | options_bot.connectors.moomoo  | ✅ Connected to OpenD successfully
+2026-03-17 21:09:09 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-17 21:09:10 | INFO     | options_bot.connectors.ibkr    | ✅ Connected to IBKR | account=U18705798
+2026-03-17 21:09:10 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-17 21:09:10 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-17 21:09:10 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-17 21:09:10 | INFO     | options_bot.scheduler.bot_scheduler | Schedule time conversion: 09:35 ET → 21:35 local (system timezone: +08)
+2026-03-17 21:09:10 | INFO     | options_bot.scheduler.bot_scheduler | Schedule time conversion: 16:05 ET → 04:05 local (system timezone: +08)
+2026-03-17 21:09:10 | INFO     | options_bot.scheduler.bot_scheduler | Schedule time conversion: 16:30 ET → 04:30 local (system timezone: +08)
+2026-03-17 21:17:31 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-17 21:17:31 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=1 | mode=paper
+2026-03-17 21:17:31 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-17 21:17:53 | INFO     | options_bot.scheduler.bot_scheduler | Shutdown signal received (2) — stopping...
+2026-03-17 21:17:53 | INFO     | options_bot.scheduler.bot_scheduler | Scheduler stopping...
+2026-03-17 21:17:53 | INFO     | options_bot.connectors.moomoo  | Quote context closed
+2026-03-17 21:17:53 | INFO     | options_bot.connectors.moomoo  | Trade context closed
+2026-03-17 21:17:53 | INFO     | options_bot.connectors.ibkr    | Disconnected from IBKR
+2026-03-17 21:17:53 | INFO     | options_bot.scheduler.bot_scheduler | Scheduler stopped
+2026-03-17 21:18:19 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-17 21:18:19 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=1 | mode=paper
+2026-03-17 21:18:19 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-17 21:18:19 | INFO     | options_bot.connectors.ibkr    | ✅ Connected to IBKR | account=U18705798
+2026-03-17 21:18:23 | INFO     | options_bot.connectors.ibkr    | Disconnected from IBKR
+2026-03-17 21:35:14 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-17 21:35:14 | INFO     | options_bot.scheduler.bot_scheduler | Building BotScheduler | mode=paper | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-17 21:35:14 | INFO     | options_bot.connectors.broker_factory | Building connectors | data=moomoo | execution=ibkr
+2026-03-17 21:35:14 | INFO     | options_bot.connectors.moomoo  | MooMooConnector initialised | host=127.0.0.1:11111 | trade_env=SIMULATE | mode=paper
+2026-03-17 21:35:14 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=1 | mode=paper
+2026-03-17 21:35:14 | INFO     | options_bot.scheduler.bot_scheduler | Connectors | data=moomoo | execution=ibkr | shared=no
+2026-03-17 21:35:14 | INFO     | options_bot.connectors.yfinance | YFinanceConnector initialised
+2026-03-17 21:35:14 | INFO     | options_bot.market.iv_rank_calculator | IVRankCalculator initialised | db=data/iv_history.db
+2026-03-17 21:35:14 | INFO     | options_bot.market.regime_detector | RegimeDetector | high_vol_vix=25.0 | bull_rsi>=55.0 | bear_rsi<=45.0
+2026-03-17 21:35:14 | INFO     | options_bot.market.options_analyser | OptionsAnalyser | DTE=21-45 | delta=0.2-0.35 | earnings_buffer=7d
+2026-03-17 21:35:14 | INFO     | options_bot.market.market_scanner | MarketScanner initialised | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-17 21:35:14 | INFO     | options_bot.strategies.registry | StrategyRegistry initialised
+2026-03-17 21:35:14 | INFO     | options_bot.strategies.covered_call | Strategy 'covered_call' initialised | enabled=True
+2026-03-17 21:35:14 | INFO     | options_bot.strategies.registry | Registered strategy 'covered_call' | enabled=True | total=1
+2026-03-17 21:35:14 | INFO     | options_bot.strategies.bear_call_spread | Strategy 'bear_call_spread' initialised | enabled=True
+2026-03-17 21:35:14 | INFO     | options_bot.strategies.registry | Registered strategy 'bear_call_spread' | enabled=True | total=2
+2026-03-17 21:35:14 | INFO     | options_bot.strategies.bull_put_spread | Strategy 'bull_put_spread' initialised | enabled=True
+2026-03-17 21:35:14 | INFO     | options_bot.strategies.registry | Registered strategy 'bull_put_spread' | enabled=True | total=3
+2026-03-17 21:35:14 | INFO     | options_bot.execution.portfolio_guard | PortfolioGuard initialised | max_positions=8 | max_risk_pct=5% | max_total_risk_pct=20% | max_trades/day=3 | portfolio=$100,000
+2026-03-17 21:35:14 | INFO     | options_bot.execution.order_router | OrderRouter initialised | mode=paper | fill_timeout=60s
+2026-03-17 21:35:14 | INFO     | options_bot.execution.paper_ledger | PaperLedger initialised | db=data/paper_trades.db
+2026-03-17 21:35:14 | INFO     | options_bot.execution.portfolio_guard | PortfolioGuard restored 4 open position(s) from ledger | trades today=0 (incl. closed/stopped)
+2026-03-17 21:35:14 | INFO     | options_bot.execution.signal_ranker | SignalRanker initialised | enabled=True | weights: iv_rank=0.4 buffer=0.35 rr=0.25
+2026-03-17 21:35:14 | INFO     | options_bot.execution.trade_manager | TradeManager initialised | mode=paper | ranker_enabled=True
+2026-03-17 21:35:14 | INFO     | options_bot.monitoring.exit_evaluator | ExitEvaluator | stop_loss=3.0×credit | min_hold=5d | take_profit=50% | dte_close=21d
+2026-03-17 21:35:14 | INFO     | options_bot.monitoring.position_monitor | PositionMonitor initialised
+2026-03-17 21:35:14 | INFO     | options_bot.monitoring.validation_reporter | ValidationReporter | min_trades=10 | min_win_rate=60% | min_sharpe=0.5
+2026-03-17 21:35:14 | INFO     | options_bot.scheduler.bot_scheduler | All components built successfully
+2026-03-17 21:35:14 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:35:14 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:35:14 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:35:14 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:35:14 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:35:14 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:35:14 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:35:14 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 21:35:14 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridgePool] 8 symbols | provider=gemini | HTF=2h LTF=30min
+2026-03-17 21:35:14 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] pool initialized | 8 symbols | provider=gemini | HTF=2h LTF=30min
+2026-03-17 21:35:14 | INFO     | options_bot.scheduler.bot_scheduler | BotScheduler initialised | mode=paper | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-17 21:35:14 | INFO     | options_bot.main               | Starting Options Bot | mode=paper | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-17 21:35:14 | INFO     | options_bot.connectors.moomoo  | Connecting to OpenD...
+2026-03-17 21:35:14 | INFO     | options_bot.connectors.moomoo  | Quote context opened
+2026-03-17 21:35:14 | INFO     | options_bot.connectors.moomoo  | Trade context opened
+2026-03-17 21:35:14 | INFO     | options_bot.connectors.moomoo  | ✅ Connected to OpenD successfully
+2026-03-17 21:35:14 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-17 21:35:14 | INFO     | options_bot.connectors.ibkr    | ✅ Connected to IBKR | account=U18705798
+2026-03-17 21:35:18 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-17 21:35:18 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-17 21:35:18 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-17 21:35:18 | INFO     | options_bot.scheduler.bot_scheduler | Schedule time conversion: 09:35 ET → 21:35 local (system timezone: +08)
+2026-03-17 21:35:18 | INFO     | options_bot.scheduler.bot_scheduler | Schedule time conversion: 16:05 ET → 04:05 local (system timezone: +08)
+2026-03-17 21:35:18 | INFO     | options_bot.scheduler.bot_scheduler | Schedule time conversion: 16:30 ET → 04:30 local (system timezone: +08)
+2026-03-17 21:35:28 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (12820ms)
+2026-03-17 21:35:29 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] HTF: RANGING conf=4 dir=BOTH (13025ms)
+2026-03-17 21:35:29 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (13948ms) → combined: SHORT_ONLY
+2026-03-17 21:35:30 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] LTF: RANGING conf=3 dir=BOTH (13926ms) → combined: BOTH
+2026-03-17 21:35:30 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (13599ms)
+2026-03-17 21:35:30 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (14776ms)
+2026-03-17 21:35:31 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] HTF: RANGING conf=4 dir=BOTH (13139ms)
+2026-03-17 21:35:31 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (15151ms) → combined: SHORT_ONLY
+2026-03-17 21:35:31 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] HTF: WEAK_DOWNTREND conf=3 dir=SHORT_ONLY (13877ms)
+2026-03-17 21:35:33 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] LTF: UPTREND conf=4 dir=LONG_ONLY (15340ms) → combined: LONG_ONLY
+2026-03-17 21:35:33 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] LTF: TRANSITION conf=4 dir=NO_TRADE (16955ms) → combined: WAIT
+2026-03-17 21:35:34 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] LTF: WEAK_UPTREND conf=3 dir=LONG_ONLY (16976ms) → combined: LONG_ONLY
+2026-03-17 21:35:34 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] LTF: TRANSITION conf=3 dir=NO_TRADE (16419ms) → combined: BOTH
+2026-03-17 21:35:35 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] HTF: TRANSITION conf=4 dir=NO_TRADE (16815ms)
+2026-03-17 21:35:35 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] HTF: WEAK_DOWNTREND conf=4 dir=SHORT_ONLY (18560ms)
+2026-03-17 21:35:36 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] LTF: TRANSITION conf=4 dir=NO_TRADE (18858ms) → combined: WAIT
+2026-03-17 21:37:04 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-17 21:37:21 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-17 21:37:23 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=1 | mode=paper
+2026-03-17 21:37:23 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-17 21:38:37 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-17 21:38:40 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=2 | mode=paper
+2026-03-17 21:38:40 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-17 21:38:40 | INFO     | options_bot.connectors.ibkr    | ✅ Connected to IBKR | account=U18705798
+2026-03-17 21:38:44 | INFO     | options_bot.connectors.ibkr    | Disconnected from IBKR
+2026-03-17 21:40:28 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-17 21:40:31 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=2 | mode=paper
+2026-03-17 21:40:31 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-17 21:40:31 | INFO     | options_bot.connectors.ibkr    | ✅ Connected to IBKR | account=U18705798
+2026-03-17 21:40:34 | INFO     | options_bot.connectors.ibkr    | Disconnected from IBKR
+2026-03-17 21:42:27 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-17 21:42:29 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=2 | mode=paper
+2026-03-17 21:42:29 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-17 21:42:29 | INFO     | options_bot.connectors.ibkr    | ✅ Connected to IBKR | account=U18705798
+2026-03-17 21:42:33 | INFO     | options_bot.connectors.ibkr    | [PAPER] place_combo_order — paper trading mode
+2026-03-17 21:42:33 | INFO     | options_bot.connectors.ibkr    | Placing combo: SELL SPY260410C00730000 | BUY SPY260410C00740000 | qty=1 | credit=$50.00
+2026-03-17 21:42:34 | INFO     | options_bot.connectors.ibkr    | Combo order placed | id=12 | status=PendingSubmit
+2026-03-17 21:42:37 | INFO     | options_bot.connectors.ibkr    | Order 12 cancelled
+2026-03-17 21:42:39 | INFO     | options_bot.connectors.ibkr    | Disconnected from IBKR
+2026-03-17 21:50:53 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-17 21:50:57 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=2 | mode=paper
+2026-03-17 21:50:57 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-17 21:50:57 | INFO     | options_bot.connectors.ibkr    | ✅ Connected to IBKR | account=U18705798
+2026-03-17 21:51:01 | INFO     | options_bot.connectors.ibkr    | [PAPER] place_combo_order — paper trading mode
+2026-03-17 21:51:01 | INFO     | options_bot.connectors.ibkr    | Placing combo: SELL SPY260410C00730000 | BUY SPY260410C00740000 | qty=1 | credit=$50.00
+2026-03-17 21:51:02 | INFO     | options_bot.connectors.ibkr    | Combo order placed | id=24 | status=Inactive
+2026-03-17 21:51:04 | INFO     | options_bot.connectors.ibkr    | Order 24 cancelled
+2026-03-17 21:51:06 | INFO     | options_bot.connectors.ibkr    | Disconnected from IBKR
+2026-03-17 22:00:12 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-17 22:00:16 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=2 | mode=paper
+2026-03-17 22:00:16 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-17 22:00:16 | INFO     | options_bot.connectors.ibkr    | ✅ Connected to IBKR | account=U18705798
+2026-03-17 22:00:20 | INFO     | options_bot.connectors.ibkr    | [PAPER] place_combo_order — paper trading mode
+2026-03-17 22:00:20 | INFO     | options_bot.connectors.ibkr    | Placing combo: SELL SPY260410C00730000 | BUY SPY260410C00740000 | qty=1 | credit=$50.00
+2026-03-17 22:00:21 | INFO     | options_bot.connectors.ibkr    | Combo order placed | id=36 | status=Inactive
+2026-03-17 22:00:24 | INFO     | options_bot.connectors.ibkr    | Order 36 cancelled
+2026-03-17 22:00:26 | INFO     | options_bot.connectors.ibkr    | Disconnected from IBKR
+2026-03-17 22:05:19 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.NVDA: direction=BOTH (src=none) HTF=RANGING LTF=RANGING
+2026-03-17 22:05:19 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.AMZN: direction=NO_TRADE (src=llm) HTF=TRANSITION LTF=UPTREND
+2026-03-17 22:05:19 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.QQQ: direction=WAIT (src=llm) HTF=WEAK_DOWNTREND LTF=TRANSITION
+2026-03-17 22:05:19 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.MSFT: direction=BOTH (src=none) HTF=RANGING LTF=TRANSITION
+2026-03-17 22:05:19 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-17 22:05:19 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-17 22:05:19 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-17 22:44:13 | WARNING  | options_bot.monitoring.position_monitor | Failed to fetch price for trade #13: get_market_snapshot failed: Network interruption
+2026-03-17 22:44:13 | WARNING  | options_bot.monitoring.position_monitor | Failed to fetch price for trade #12: get_market_snapshot failed: Network interruption
+2026-03-17 22:44:13 | WARNING  | options_bot.monitoring.position_monitor | Failed to fetch price for trade #11: get_market_snapshot failed: Network interruption
+2026-03-17 22:44:13 | WARNING  | options_bot.monitoring.position_monitor | Failed to fetch price for trade #10: get_market_snapshot failed: Network interruption
+2026-03-17 22:44:16 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-17 22:44:16 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-17 22:44:16 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-17 22:44:25 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] LTF: UPTREND conf=4 dir=LONG_ONLY (9894ms) → combined: WAIT
+2026-03-17 22:44:26 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (12934ms) → combined: SHORT_ONLY
+2026-03-17 22:44:28 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] LTF: RANGING conf=4 dir=BOTH (13473ms) → combined: SHORT_ONLY
+2026-03-17 22:44:28 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (12931ms) → combined: SHORT_ONLY
+2026-03-17 22:44:28 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] LTF: RANGING conf=4 dir=BOTH (13629ms) → combined: BOTH
+2026-03-17 22:44:29 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] LTF: TRANSITION conf=4 dir=NO_TRADE (12747ms) → combined: NO_TRADE
+2026-03-17 22:44:29 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] LTF: TRANSITION conf=3 dir=NO_TRADE (13598ms) → combined: BOTH
+2026-03-17 22:44:30 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] LTF: TRANSITION conf=4 dir=NO_TRADE (13938ms) → combined: WAIT
+2026-03-17 23:16:50 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.NVDA: direction=BOTH (src=none) HTF=RANGING LTF=RANGING
+2026-03-17 23:16:50 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.AMZN: direction=NO_TRADE (src=llm) HTF=TRANSITION LTF=TRANSITION
+2026-03-17 23:16:50 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.QQQ: direction=WAIT (src=llm) HTF=WEAK_DOWNTREND LTF=TRANSITION
+2026-03-17 23:16:50 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.MSFT: direction=BOTH (src=none) HTF=RANGING LTF=TRANSITION
+2026-03-17 23:16:50 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-17 23:16:50 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-17 23:16:50 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-17 23:17:02 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] LTF: RANGING conf=4 dir=BOTH (12632ms) → combined: BOTH
+2026-03-17 23:17:02 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (13429ms) → combined: SHORT_ONLY
+2026-03-17 23:17:02 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (13213ms) → combined: SHORT_ONLY
+2026-03-17 23:17:04 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (14010ms) → combined: SHORT_ONLY
+2026-03-17 23:17:04 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] LTF: UPTREND conf=4 dir=LONG_ONLY (14919ms) → combined: WAIT
+2026-03-17 23:17:04 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] LTF: TRANSITION conf=4 dir=NO_TRADE (14681ms) → combined: NO_TRADE
+2026-03-17 23:17:06 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] LTF: TRANSITION conf=3 dir=NO_TRADE (16253ms) → combined: WAIT
+2026-03-17 23:17:06 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] LTF: RANGING conf=4 dir=BOTH (17061ms) → combined: SHORT_ONLY
+2026-03-17 23:46:53 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.NVDA: direction=BOTH (src=none) HTF=RANGING LTF=RANGING
+2026-03-17 23:46:53 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.AMZN: direction=NO_TRADE (src=llm) HTF=TRANSITION LTF=TRANSITION
+2026-03-17 23:46:53 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.QQQ: direction=WAIT (src=llm) HTF=WEAK_DOWNTREND LTF=TRANSITION
+2026-03-17 23:46:53 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.MSFT: direction=SHORT_ONLY (src=llm) HTF=RANGING LTF=DOWNTREND
+2026-03-17 23:46:53 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-17 23:46:53 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-17 23:46:53 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-17 23:47:00 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (7875ms)
+2026-03-17 23:47:00 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] HTF: RANGING conf=4 dir=BOTH (8495ms)
+2026-03-17 23:47:02 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] HTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (10151ms)
+2026-03-17 23:47:04 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] HTF: RANGING conf=4 dir=BOTH (10864ms)
+2026-03-17 23:47:04 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] HTF: WEAK_UPTREND conf=3 dir=LONG_ONLY (10909ms)
+2026-03-17 23:47:05 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] HTF: RANGING conf=3 dir=BOTH (12031ms)
+2026-03-17 23:47:05 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (12808ms)
+2026-03-17 23:47:07 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] HTF: RANGING conf=3 dir=BOTH (14468ms)
+2026-03-18 00:17:23 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-18 00:17:23 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-18 00:17:23 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 00:17:32 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (9374ms) → combined: SHORT_ONLY
+2026-03-18 00:17:33 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] LTF: UPTREND conf=4 dir=LONG_ONLY (11017ms) → combined: LONG_ONLY
+2026-03-18 00:17:34 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (12963ms) → combined: SHORT_ONLY
+2026-03-18 00:17:36 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] LTF: WEAK_DOWNTREND conf=4 dir=SHORT_ONLY (13722ms) → combined: SHORT_ONLY
+2026-03-18 00:17:37 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] LTF: TRANSITION conf=4 dir=NO_TRADE (13589ms) → combined: WAIT
+2026-03-18 00:17:37 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] LTF: WEAK_DOWNTREND conf=3 dir=SHORT_ONLY (14733ms) → combined: SHORT_ONLY
+2026-03-18 00:17:37 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] LTF: RANGING conf=3 dir=BOTH (15366ms) → combined: SHORT_ONLY
+2026-03-18 00:17:38 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] LTF: RANGING conf=3 dir=BOTH (16676ms) → combined: BOTH
+2026-03-18 00:47:25 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.NVDA: direction=BOTH (src=none) HTF=RANGING LTF=RANGING
+2026-03-18 00:47:25 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.AMZN: direction=WAIT (src=llm) HTF=WEAK_UPTREND LTF=TRANSITION
+2026-03-18 00:47:25 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.QQQ: direction=SHORT_ONLY (src=llm) HTF=RANGING LTF=WEAK_DOWNTREND
+2026-03-18 00:47:25 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.MSFT: direction=SHORT_ONLY (src=llm) HTF=RANGING LTF=DOWNTREND
+2026-03-18 00:47:25 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-18 00:47:25 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-18 00:47:25 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 01:17:27 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-18 01:17:27 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-18 01:17:27 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 01:17:38 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] LTF: STRONG_UPTREND conf=4 dir=LONG_ONLY (11064ms) → combined: LONG_ONLY
+2026-03-18 01:17:38 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] LTF: RANGING conf=4 dir=BOTH (11840ms) → combined: BOTH
+2026-03-18 01:17:39 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] LTF: WEAK_DOWNTREND conf=3 dir=SHORT_ONLY (11376ms) → combined: SHORT_ONLY
+2026-03-18 01:17:39 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (13332ms) → combined: SHORT_ONLY
+2026-03-18 01:17:40 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (13379ms) → combined: SHORT_ONLY
+2026-03-18 01:17:40 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] LTF: TRANSITION conf=4 dir=NO_TRADE (12848ms) → combined: BOTH
+2026-03-18 01:17:40 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] LTF: UPTREND conf=4 dir=LONG_ONLY (12802ms) → combined: LONG_ONLY
+2026-03-18 01:17:41 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] LTF: WEAK_DOWNTREND conf=3 dir=SHORT_ONLY (14616ms) → combined: SHORT_ONLY
+2026-03-18 01:47:30 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.NVDA: direction=BOTH (src=none) HTF=RANGING LTF=RANGING
+2026-03-18 01:47:30 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.AMZN: direction=LONG_ONLY (src=llm) HTF=WEAK_UPTREND LTF=UPTREND
+2026-03-18 01:47:30 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.QQQ: direction=BOTH (src=none) HTF=RANGING LTF=TRANSITION
+2026-03-18 01:47:30 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.MSFT: direction=SHORT_ONLY (src=llm) HTF=RANGING LTF=WEAK_DOWNTREND
+2026-03-18 01:47:30 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-18 01:47:30 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-18 01:47:30 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 01:47:38 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] HTF: RANGING conf=4 dir=BOTH (8767ms)
+2026-03-18 01:47:38 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] HTF: RANGING conf=4 dir=BOTH (9427ms)
+2026-03-18 01:47:38 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (9923ms)
+2026-03-18 01:47:39 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (10183ms)
+2026-03-18 01:47:40 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] HTF: RANGING conf=4 dir=BOTH (10116ms)
+2026-03-18 01:47:41 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] HTF: STRONG_DOWNTREND conf=5 dir=SHORT_ONLY (12907ms)
+2026-03-18 01:47:43 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] HTF: WEAK_UPTREND conf=3 dir=LONG_ONLY (13123ms)
+2026-03-18 01:47:44 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] HTF: RANGING conf=3 dir=BOTH (14495ms)
+2026-03-18 02:17:32 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-18 02:17:32 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-18 02:17:32 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 02:17:42 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] LTF: WEAK_DOWNTREND conf=3 dir=SHORT_ONLY (10124ms) → combined: SHORT_ONLY
+2026-03-18 02:17:43 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] LTF: RANGING conf=4 dir=BOTH (11832ms) → combined: BOTH
+2026-03-18 02:17:43 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] LTF: STRONG_UPTREND conf=4 dir=LONG_ONLY (11742ms) → combined: LONG_ONLY
+2026-03-18 02:17:45 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (13307ms) → combined: SHORT_ONLY
+2026-03-18 02:17:45 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] LTF: RANGING conf=3 dir=BOTH (14327ms) → combined: SHORT_ONLY
+2026-03-18 02:17:45 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] LTF: TRANSITION conf=4 dir=NO_TRADE (13769ms) → combined: BOTH
+2026-03-18 02:17:47 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] LTF: TRANSITION conf=4 dir=NO_TRADE (14624ms) → combined: WAIT
+2026-03-18 02:17:47 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (16469ms) → combined: SHORT_ONLY
+2026-03-18 02:47:34 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.NVDA: direction=BOTH (src=none) HTF=RANGING LTF=RANGING
+2026-03-18 02:47:34 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.AMZN: direction=WAIT (src=llm) HTF=WEAK_UPTREND LTF=TRANSITION
+2026-03-18 02:47:34 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.QQQ: direction=BOTH (src=none) HTF=RANGING LTF=TRANSITION
+2026-03-18 02:47:34 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.MSFT: direction=SHORT_ONLY (src=llm) HTF=RANGING LTF=WEAK_DOWNTREND
+2026-03-18 02:47:34 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-18 02:47:34 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-18 02:47:34 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 03:07:01 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-18 03:07:07 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=2 | mode=paper
+2026-03-18 03:07:07 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-18 03:07:07 | INFO     | options_bot.connectors.ibkr    | ✅ Connected to IBKR | account=U18705798
+2026-03-18 03:07:11 | INFO     | options_bot.connectors.ibkr    | [PAPER] place_combo_order — paper trading mode
+2026-03-18 03:07:11 | INFO     | options_bot.connectors.ibkr    | Placing combo: SELL SPY260410C00725000 | BUY SPY260410C00735000 | qty=1 | credit=$50.00
+2026-03-18 03:07:12 | INFO     | options_bot.connectors.ibkr    | Combo order placed | id=48 | status=Inactive
+2026-03-18 03:07:15 | INFO     | options_bot.connectors.ibkr    | Order 48 cancelled
+2026-03-18 03:07:17 | INFO     | options_bot.connectors.ibkr    | Disconnected from IBKR
+2026-03-18 03:10:40 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-18 03:10:47 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=2 | mode=paper
+2026-03-18 03:10:47 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-18 03:10:47 | INFO     | options_bot.connectors.ibkr    | ✅ Connected to IBKR | account=U18705798
+2026-03-18 03:10:51 | INFO     | options_bot.connectors.ibkr    | [PAPER] place_combo_order — paper trading mode
+2026-03-18 03:10:51 | INFO     | options_bot.connectors.ibkr    | Placing combo: SELL SPY260410C00725000 | BUY SPY260410C00735000 | qty=1 | credit=$50.00
+2026-03-18 03:10:52 | INFO     | options_bot.connectors.ibkr    | Combo order placed | id=60 | status=Inactive
+2026-03-18 03:10:54 | INFO     | options_bot.connectors.ibkr    | Order 60 cancelled
+2026-03-18 03:10:56 | INFO     | options_bot.connectors.ibkr    | Disconnected from IBKR
+2026-03-18 03:17:37 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-18 03:17:37 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-18 03:17:37 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 03:17:46 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] LTF: RANGING conf=4 dir=BOTH (10004ms) → combined: SHORT_ONLY
+2026-03-18 03:17:47 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] LTF: WEAK_DOWNTREND conf=3 dir=SHORT_ONLY (9837ms) → combined: SHORT_ONLY
+2026-03-18 03:17:48 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] LTF: STRONG_UPTREND conf=5 dir=LONG_ONLY (11330ms) → combined: LONG_ONLY
+2026-03-18 03:17:48 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] LTF: WEAK_DOWNTREND conf=3 dir=SHORT_ONLY (12205ms) → combined: SHORT_ONLY
+2026-03-18 03:17:48 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] LTF: RANGING conf=4 dir=BOTH (12354ms) → combined: BOTH
+2026-03-18 03:17:50 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] LTF: UPTREND conf=3 dir=LONG_ONLY (13335ms) → combined: LONG_ONLY
+2026-03-18 03:17:50 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] LTF: WEAK_DOWNTREND conf=3 dir=SHORT_ONLY (14023ms) → combined: SHORT_ONLY
+2026-03-18 03:17:50 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] LTF: UPTREND conf=4 dir=LONG_ONLY (12942ms) → combined: LONG_ONLY
+2026-03-18 03:25:09 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-18 03:25:14 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=2 | mode=paper
+2026-03-18 03:25:14 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-18 03:25:15 | INFO     | options_bot.connectors.ibkr    | ✅ Connected to IBKR | account=U18705798
+2026-03-18 03:25:18 | INFO     | options_bot.connectors.ibkr    | [PAPER] place_combo_order — paper trading mode
+2026-03-18 03:25:18 | INFO     | options_bot.connectors.ibkr    | Placing combo: SELL SPY260410C00725000 | BUY SPY260410C00735000 | qty=1 | credit=$8.00
+2026-03-18 03:25:20 | INFO     | options_bot.connectors.ibkr    | Combo order placed | id=72 | status=Inactive
+2026-03-18 03:25:22 | INFO     | options_bot.connectors.ibkr    | Order 72 cancelled
+2026-03-18 03:25:24 | INFO     | options_bot.connectors.ibkr    | Disconnected from IBKR
+2026-03-18 03:47:39 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.NVDA: direction=BOTH (src=none) HTF=RANGING LTF=RANGING
+2026-03-18 03:47:39 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.AMZN: direction=LONG_ONLY (src=llm) HTF=WEAK_UPTREND LTF=UPTREND
+2026-03-18 03:47:39 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.QQQ: direction=LONG_ONLY (src=llm) HTF=RANGING LTF=UPTREND
+2026-03-18 03:47:39 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.MSFT: direction=SHORT_ONLY (src=llm) HTF=RANGING LTF=WEAK_DOWNTREND
+2026-03-18 03:47:39 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-18 03:47:39 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-18 03:47:39 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 03:47:46 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] HTF: RANGING conf=4 dir=BOTH (7366ms)
+2026-03-18 03:47:49 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (10091ms)
+2026-03-18 04:05:09 | INFO     | options_bot.scheduler.bot_scheduler | [IV JOB] Collecting end-of-day IV...
+2026-03-18 04:05:10 | INFO     | options_bot.scheduler.bot_scheduler | [IV JOB] US.SPY: ATM IV=26.0%
+2026-03-18 04:05:10 | INFO     | options_bot.scheduler.bot_scheduler | [IV JOB] US.QQQ: ATM IV=32.7%
+2026-03-18 04:05:11 | INFO     | options_bot.scheduler.bot_scheduler | [IV JOB] US.AAPL: ATM IV=27.6%
+2026-03-18 04:05:11 | INFO     | options_bot.scheduler.bot_scheduler | [IV JOB] US.MSFT: ATM IV=27.8%
+2026-03-18 04:05:11 | INFO     | options_bot.scheduler.bot_scheduler | [IV JOB] US.AMZN: ATM IV=33.6%
+2026-03-18 04:05:11 | INFO     | options_bot.scheduler.bot_scheduler | [IV JOB] US.GOOGL: ATM IV=28.9%
+2026-03-18 04:05:12 | INFO     | options_bot.scheduler.bot_scheduler | [IV JOB] US.NVDA: ATM IV=40.7%
+2026-03-18 04:05:12 | INFO     | options_bot.scheduler.bot_scheduler | [IV JOB] US.TSLA: ATM IV=39.8%
+2026-03-18 04:17:42 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 04:18:01 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-18 04:18:04 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=2 | mode=paper
+2026-03-18 04:18:04 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-18 04:18:05 | INFO     | options_bot.connectors.ibkr    | ✅ Connected to IBKR | account=U18705798
+2026-03-18 04:18:08 | INFO     | options_bot.connectors.ibkr    | [PAPER] place_combo_order — paper trading mode
+2026-03-18 04:18:08 | INFO     | options_bot.connectors.ibkr    | Placing combo (credit spread): SELL SPY260410C00725000 | BUY SPY260410C00735000 | qty=1 | credit=$8.00 | order=BUY @ $-8.00 (IBKR credit convention)
+2026-03-18 04:18:09 | INFO     | options_bot.connectors.ibkr    | Combo order placed | id=84 | status=Inactive
+2026-03-18 04:18:12 | INFO     | options_bot.connectors.ibkr    | Order 84 cancelled
+2026-03-18 04:18:14 | INFO     | options_bot.connectors.ibkr    | Disconnected from IBKR
+2026-03-18 04:29:10 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-18 04:29:15 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=2 | mode=paper
+2026-03-18 04:29:15 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-18 04:29:16 | INFO     | options_bot.connectors.ibkr    | ✅ Connected to IBKR | account=U18705798
+2026-03-18 04:29:19 | INFO     | options_bot.connectors.ibkr    | [PAPER] place_combo_order — paper trading mode
+2026-03-18 04:29:19 | INFO     | options_bot.connectors.ibkr    | Placing combo (credit spread): SELL SPY260410C00725000 | BUY SPY260410C00735000 | qty=1 | credit=$8.00 | order=BUY @ $-8.00 (IBKR credit convention)
+2026-03-18 04:29:20 | INFO     | options_bot.connectors.ibkr    | Combo order placed | id=96 | status=PreSubmitted
+2026-03-18 04:29:23 | INFO     | options_bot.connectors.ibkr    | Order 96 cancelled
+2026-03-18 04:29:25 | INFO     | options_bot.connectors.ibkr    | Disconnected from IBKR
+2026-03-18 04:41:30 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-18 04:41:35 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=2 | mode=paper
+2026-03-18 04:41:35 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-18 04:41:35 | INFO     | options_bot.connectors.ibkr    | ✅ Connected to IBKR | account=U18705798
+2026-03-18 04:41:38 | INFO     | options_bot.connectors.ibkr    | [PAPER] place_combo_order — paper trading mode
+2026-03-18 04:41:38 | INFO     | options_bot.connectors.ibkr    | Placing combo (credit spread): SELL SPY260410C00725000 | BUY SPY260410C00735000 | qty=1 | credit=$8.00 | order=BUY @ $-8.00 (IBKR credit convention)
+2026-03-18 04:41:39 | INFO     | options_bot.connectors.ibkr    | Combo order placed | id=108 | status=PreSubmitted
+2026-03-18 04:41:42 | INFO     | options_bot.connectors.ibkr    | Order 108 cancelled
+2026-03-18 04:41:44 | INFO     | options_bot.connectors.ibkr    | Disconnected from IBKR
+2026-03-18 04:46:54 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-18 04:46:57 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=2 | mode=paper
+2026-03-18 04:46:57 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-18 04:46:58 | INFO     | options_bot.connectors.ibkr    | ✅ Connected to IBKR | account=U18705798
+2026-03-18 04:47:01 | INFO     | options_bot.connectors.ibkr    | [PAPER] place_combo_order — paper trading mode
+2026-03-18 04:47:01 | INFO     | options_bot.connectors.ibkr    | Placing combo (credit spread): SELL SPY260410C00725000 | BUY SPY260410C00735000 | qty=1 | credit=$8.00 | order=BUY @ $-8.00 (IBKR credit convention)
+2026-03-18 04:47:02 | INFO     | options_bot.connectors.ibkr    | Combo order placed | id=120 | status=PreSubmitted
+2026-03-18 04:47:05 | INFO     | options_bot.connectors.ibkr    | Order 120 cancelled
+2026-03-18 04:47:07 | INFO     | options_bot.connectors.ibkr    | Disconnected from IBKR
+2026-03-18 04:47:42 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits

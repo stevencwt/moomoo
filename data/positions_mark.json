@@ -1,41 +1,41 @@
 {
-  "updated_at": "2026-03-16T15:39:53.850776-04:00",
+  "updated_at": "2026-03-17T15:47:38.590151-04:00",
   "marks": [
     {
       "id": 13,
       "symbol": "US.AMZN",
-      "current_price": 1.7599999999999998,
-      "unrealised_pnl": 30.00000000000003,
-      "pnl_pct": 0.14563106796116518,
+      "current_price": 1.31,
+      "unrealised_pnl": 75.0,
+      "pnl_pct": 0.3640776699029126,
       "exit_signal": null,
-      "as_of": "2026-03-16T15:39:53.850776-04:00"
+      "as_of": "2026-03-17T15:47:38.590151-04:00"
     },
     {
       "id": 12,
       "symbol": "US.MSFT",
-      "current_price": 2.25,
-      "unrealised_pnl": 20.000000000000018,
-      "pnl_pct": 0.08163265306122455,
+      "current_price": 2.0999999999999996,
+      "unrealised_pnl": 35.00000000000006,
+      "pnl_pct": 0.14285714285714307,
       "exit_signal": null,
-      "as_of": "2026-03-16T15:39:53.850776-04:00"
+      "as_of": "2026-03-17T15:47:38.590151-04:00"
     },
     {
       "id": 11,
       "symbol": "US.NVDA",
-      "current_price": 2.285,
-      "unrealised_pnl": 7.499999999999973,
-      "pnl_pct": 0.03177966101694904,
+      "current_price": 1.8049999999999997,
+      "unrealised_pnl": 55.500000000000014,
+      "pnl_pct": 0.2351694915254238,
       "exit_signal": null,
-      "as_of": "2026-03-16T15:39:53.850776-04:00"
+      "as_of": "2026-03-17T15:47:38.590151-04:00"
     },
     {
       "id": 10,
       "symbol": "US.QQQ",
-      "current_price": 2.3799999999999994,
-      "unrealised_pnl": 137.00000000000006,
-      "pnl_pct": 0.3653333333333335,
+      "current_price": 2.4,
+      "unrealised_pnl": 135.0,
+      "pnl_pct": 0.36,
       "exit_signal": null,
-      "as_of": "2026-03-16T15:39:53.850776-04:00"
+      "as_of": "2026-03-17T15:47:38.590151-04:00"
     }
   ]
 }

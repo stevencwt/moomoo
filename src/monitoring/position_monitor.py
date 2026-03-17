@@ -40,7 +40,7 @@ from zoneinfo import ZoneInfo
 
 from src.execution.paper_ledger import PaperLedger
 from src.execution.trade_manager import TradeManager
-from src.connectors.moomoo_connector import MooMooConnector
+from src.connectors.connector_protocol import BrokerConnector
 from src.monitoring.exit_evaluator import ExitEvaluator, ExitDecision
 from src.logger import get_logger
 
@@ -63,7 +63,7 @@ class PositionMonitor:
         config:        dict,
         ledger:        PaperLedger,
         trade_manager: TradeManager,
-        moomoo:        MooMooConnector,
+        moomoo:        BrokerConnector,
         evaluator:     ExitEvaluator,
     ):
         self._config        = config
@@ -210,11 +210,9 @@ class PositionMonitor:
             except Exception:
                 pass
             try:
-                snap_ctx = self._moomoo.get_market_snapshot([trade["symbol"]])
-                if snap_ctx is not None and len(snap_ctx) > 0:
-                    spot_at_close = float(
-                        snap_ctx.iloc[0].get("last_price", 0)
-                    ) or None
+                # get_spot_price() works on both MooMoo and IBKR connectors
+                _spot = self._moomoo.get_spot_price(trade["symbol"])
+                spot_at_close = float(_spot) if _spot and _spot > 0 else None
             except Exception:
                 pass
 
@@ -316,9 +314,9 @@ class PositionMonitor:
             pass
 
         try:
-            snap_ctx = self._moomoo.get_market_snapshot([trade["symbol"]])
-            if snap_ctx is not None and len(snap_ctx) > 0:
-                spot_at_close = float(snap_ctx.iloc[0].get("last_price", 0)) or None
+            # get_spot_price() works on both MooMoo and IBKR connectors
+            _spot = self._moomoo.get_spot_price(trade["symbol"])
+            spot_at_close = float(_spot) if _spot and _spot > 0 else None
         except Exception:
             pass
 

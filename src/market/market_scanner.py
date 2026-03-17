@@ -36,7 +36,7 @@ except Exception as _e:
     _logging.getLogger('market.market_scanner').warning(
         f'RegimeBridge unavailable: {_e}')
 
-from src.connectors.moomoo_connector import MooMooConnector
+from src.connectors.connector_protocol import BrokerConnector
 from src.connectors.yfinance_connector import YFinanceConnector
 from src.exceptions import DataError
 from src.logger import get_logger
@@ -52,7 +52,7 @@ class MarketScanner:
     def __init__(
         self,
         config:      Dict,
-        moomoo:      MooMooConnector,
+        moomoo:      BrokerConnector,
         yfinance:    YFinanceConnector,
         tech:        TechnicalAnalyser,
         options:     OptionsAnalyser,
@@ -192,7 +192,7 @@ class MarketScanner:
         # Count positions for this symbol
         open_positions = 0
         if len(all_positions) > 0 and "code" in all_positions.columns:
-            ticker = MooMooConnector.to_yfinance_symbol(symbol)
+            ticker = symbol.replace("US.", "").replace("HK.", "")  # broker-agnostic
             open_positions = len(
                 all_positions[all_positions["code"].str.contains(ticker, na=False)]
             )

@@ -331,6 +331,35 @@ class MooMooConnector:
             "market_val":   float(row.get("market_val", 0)),
         }
 
+    def get_spot_price(self, symbol: str) -> float:
+        """
+        Return current spot price for a symbol.
+        Implements BrokerConnector.get_spot_price() using MooMoo market snapshot.
+
+        Args:
+            symbol: Bot format e.g. "US.TSLA"
+
+        Returns:
+            Current last price as float.
+
+        Raises:
+            DataError: If price unavailable or connection lost.
+        """
+        self._ensure_connected()
+        from src.exceptions import DataError
+        ret, snap = self._quote_ctx.get_market_snapshot([symbol])
+        if ret != 0 or snap is None or len(snap) == 0:
+            raise DataError(f"get_spot_price failed for {symbol}: {snap}")
+        price = float(snap.iloc[0].get("last_price", 0))
+        if price <= 0:
+            # Fallback to mid of bid/ask
+            bid = float(snap.iloc[0].get("bid_price", 0))
+            ask = float(snap.iloc[0].get("ask_price", 0))
+            price = (bid + ask) / 2 if bid > 0 and ask > 0 else 0.0
+        if price <= 0:
+            raise DataError(f"Could not get spot price for {symbol}")
+        return price
+
     def get_shares_held(self, symbol: str) -> int:
         """
         Return number of shares held for a symbol in the STOCK account.
