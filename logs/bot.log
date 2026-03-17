@@ -1,0 +1,57 @@
+2026-03-17 18:37:16 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-17 18:37:16 | INFO     | options_bot.scheduler.bot_scheduler | Building BotScheduler | mode=paper | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-17 18:37:16 | INFO     | options_bot.connectors.broker_factory | Building connectors | data=moomoo | execution=ibkr
+2026-03-17 18:37:16 | INFO     | options_bot.connectors.moomoo  | MooMooConnector initialised | host=127.0.0.1:11111 | trade_env=SIMULATE | mode=paper
+2026-03-17 18:37:16 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=1 | mode=paper
+2026-03-17 18:37:16 | INFO     | options_bot.scheduler.bot_scheduler | Connectors | data=moomoo | execution=ibkr | shared=no
+2026-03-17 18:37:16 | INFO     | options_bot.connectors.yfinance | YFinanceConnector initialised
+2026-03-17 18:37:16 | INFO     | options_bot.market.iv_rank_calculator | IVRankCalculator initialised | db=data/iv_history.db
+2026-03-17 18:37:16 | INFO     | options_bot.market.regime_detector | RegimeDetector | high_vol_vix=25.0 | bull_rsi>=55.0 | bear_rsi<=45.0
+2026-03-17 18:37:16 | INFO     | options_bot.market.options_analyser | OptionsAnalyser | DTE=21-45 | delta=0.2-0.35 | earnings_buffer=7d
+2026-03-17 18:37:16 | INFO     | options_bot.market.market_scanner | MarketScanner initialised | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-17 18:37:16 | INFO     | options_bot.strategies.registry | StrategyRegistry initialised
+2026-03-17 18:37:16 | INFO     | options_bot.strategies.covered_call | Strategy 'covered_call' initialised | enabled=True
+2026-03-17 18:37:16 | INFO     | options_bot.strategies.registry | Registered strategy 'covered_call' | enabled=True | total=1
+2026-03-17 18:37:16 | INFO     | options_bot.strategies.bear_call_spread | Strategy 'bear_call_spread' initialised | enabled=True
+2026-03-17 18:37:16 | INFO     | options_bot.strategies.registry | Registered strategy 'bear_call_spread' | enabled=True | total=2
+2026-03-17 18:37:16 | INFO     | options_bot.strategies.bull_put_spread | Strategy 'bull_put_spread' initialised | enabled=True
+2026-03-17 18:37:16 | INFO     | options_bot.strategies.registry | Registered strategy 'bull_put_spread' | enabled=True | total=3
+2026-03-17 18:37:16 | INFO     | options_bot.execution.portfolio_guard | PortfolioGuard initialised | max_positions=8 | max_risk_pct=5% | max_total_risk_pct=20% | max_trades/day=3 | portfolio=$100,000
+2026-03-17 18:37:16 | INFO     | options_bot.execution.order_router | OrderRouter initialised | mode=paper | fill_timeout=60s
+2026-03-17 18:37:16 | INFO     | options_bot.execution.paper_ledger | PaperLedger initialised | db=data/paper_trades.db
+2026-03-17 18:37:16 | INFO     | options_bot.execution.portfolio_guard | PortfolioGuard restored 4 open position(s) from ledger | trades today=0 (incl. closed/stopped)
+2026-03-17 18:37:16 | INFO     | options_bot.execution.signal_ranker | SignalRanker initialised | enabled=True | weights: iv_rank=0.4 buffer=0.35 rr=0.25
+2026-03-17 18:37:16 | INFO     | options_bot.execution.trade_manager | TradeManager initialised | mode=paper | ranker_enabled=True
+2026-03-17 18:37:16 | INFO     | options_bot.monitoring.exit_evaluator | ExitEvaluator | stop_loss=3.0×credit | min_hold=5d | take_profit=50% | dte_close=21d
+2026-03-17 18:37:16 | INFO     | options_bot.monitoring.position_monitor | PositionMonitor initialised
+2026-03-17 18:37:16 | INFO     | options_bot.monitoring.validation_reporter | ValidationReporter | min_trades=10 | min_win_rate=60% | min_sharpe=0.5
+2026-03-17 18:37:16 | INFO     | options_bot.scheduler.bot_scheduler | All components built successfully
+2026-03-17 18:37:16 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 18:37:16 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 18:37:16 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 18:37:16 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 18:37:16 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 18:37:16 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 18:37:16 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 18:37:16 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-17 18:37:16 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridgePool] 8 symbols | provider=gemini | HTF=2h LTF=30min
+2026-03-17 18:37:16 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] pool initialized | 8 symbols | provider=gemini | HTF=2h LTF=30min
+2026-03-17 18:37:16 | INFO     | options_bot.scheduler.bot_scheduler | BotScheduler initialised | mode=paper | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-17 18:37:16 | INFO     | options_bot.main               | Starting Options Bot | mode=paper | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-17 18:37:16 | INFO     | options_bot.connectors.moomoo  | Connecting to OpenD...
+2026-03-17 18:37:16 | INFO     | options_bot.connectors.moomoo  | Quote context opened
+2026-03-17 18:37:16 | INFO     | options_bot.connectors.moomoo  | Trade context opened
+2026-03-17 18:37:16 | INFO     | options_bot.connectors.moomoo  | ✅ Connected to OpenD successfully
+2026-03-17 18:37:16 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-17 18:37:36 | WARNING  | options_bot.scheduler.bot_scheduler | IBKR connection failed (paper mode — continuing without it): Failed to connect to IBKR TWS/Gateway: 
+2026-03-17 18:37:36 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-17 18:37:37 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-17 18:37:37 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-17 18:37:37 | INFO     | options_bot.scheduler.bot_scheduler | Schedule time conversion: 09:35 ET → 21:35 local (system timezone: +08)
+2026-03-17 18:37:37 | INFO     | options_bot.scheduler.bot_scheduler | Schedule time conversion: 16:05 ET → 04:05 local (system timezone: +08)
+2026-03-17 18:37:37 | INFO     | options_bot.scheduler.bot_scheduler | Schedule time conversion: 16:30 ET → 04:30 local (system timezone: +08)
+2026-03-17 18:39:02 | INFO     | options_bot.scheduler.bot_scheduler | Shutdown signal received (2) — stopping...
+2026-03-17 18:39:02 | INFO     | options_bot.scheduler.bot_scheduler | Scheduler stopping...
+2026-03-17 18:39:02 | INFO     | options_bot.connectors.moomoo  | Quote context closed
+2026-03-17 18:39:02 | INFO     | options_bot.connectors.moomoo  | Trade context closed
+2026-03-17 18:39:02 | INFO     | options_bot.scheduler.bot_scheduler | Scheduler stopped

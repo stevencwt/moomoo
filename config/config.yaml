@@ -74,9 +74,35 @@ universe:
 # ── Regime detection ─────────────────────────────────────────────────────────
 regime:
   high_vol_vix_threshold:  25.0   # VIX >= this → high_vol (no new trades)
-  bull_rsi_threshold:      55.0   # RSI >= this AND MACD > 0 → bull
-  bear_rsi_threshold:      45.0   # RSI <= this AND MACD < 0 → bear
+  bull_rsi_threshold:      55.0   # RSI >= this AND MACD > 0 → bull  (v1 fallback only)
+  bear_rsi_threshold:      45.0   # RSI <= this AND MACD < 0 → bear  (v1 fallback only)
   macd_threshold:          0.0
+
+# ── LLM Regime Detection ─────────────────────────────────────────────────────
+# Optional second-tier regime detection using LLM chart vision analysis.
+# Runs in background threads during market hours only (09:30–16:00 ET).
+# Provides directional bias (LONG_ONLY / SHORT_ONLY / BOTH) to supplement
+# the quantitative HMM/Hurst regime bridge.
+#
+# Requires:
+#   pip3 install -e "/Users/user/llm-regime[google]"
+#   export GOOGLE_API_KEY="your_key_here"   (add to ~/.zshrc for persistence)
+#
+# Provider options:
+#   "gemini"    → GOOGLE_API_KEY     (~$0.30/month for 8 symbols)  ← recommended
+#   "anthropic" → ANTHROPIC_API_KEY  (~$81/month — best accuracy)
+#   "ollama"    → no key needed      (free, local, install ollama first)
+#
+# Cost estimate at default settings (gemini):
+#   2 LLM calls/symbol/day × 8 symbols = 16 calls/day = ~$0.014/day = ~$0.30/month
+llm_regime:
+  provider:          "gemini"   # "gemini" | "anthropic" | "openai" | "ollama"
+  htf_interval_secs: 7200       # HTF call interval: 2h — macro trend changes slowly
+  ltf_interval_secs: 1800       # LTF call interval: 30min — aligns with monitor cycle
+                                # LTF fires every 30min during market hours to track
+                                # intraday regime shifts (downtrend → ranging → uptrend)
+  min_confidence:    3          # Minimum LLM confidence (1–5) to trust direction signal
+                                # Below this threshold → fall back to quant drift detection
 
 # ── Options parameters ────────────────────────────────────────────────────────
 options:

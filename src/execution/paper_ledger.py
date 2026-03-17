@@ -162,7 +162,9 @@ class PaperLedger:
             Realised gross P&L in dollars.
         """
         valid_reasons = {
-            "expired_worthless", "stop_loss", "take_profit", "dte_close", "manual"
+            "expired_worthless", "stop_loss", "take_profit", "dte_close", "manual",
+            "regime_shift",   # HMM exit mandate — regime module force-close
+            "ledger_reset",   # manual ledger reset
         }
         if close_reason not in valid_reasons:
             raise ValueError(

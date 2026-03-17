@@ -159,6 +159,97 @@ class PositionMonitor:
 
         return summary
 
+
+    # ── Public API (regime exit) ─────────────────────
+
+    def close_all_regime_shift(self, symbol: Optional[str] = None) -> List[Dict]:
+        """
+        Force-close all open positions due to an exit mandate from the regime module.
+
+        Called when RegimeManager.get_current_regime()["exit_mandate"] is True.
+        Per spec Section 5.6: immediate close, no grace period, no price threshold checks.
+
+        Args:
+            symbol: If provided, only close positions for this symbol.
+                    If None, close ALL open positions across all symbols.
+
+        Returns:
+            List of action dicts (same format as run_cycle).
+        """
+        open_trades = self._ledger.get_open_trades()
+        if symbol:
+            open_trades = [t for t in open_trades if t["symbol"] == symbol]
+
+        if not open_trades:
+            return []
+
+        scope = f"symbol={symbol}" if symbol else "ALL symbols"
+        logger.warning(
+            f"[REGIME SHIFT] Exit mandate fired \u2014 force-closing "
+            f"{len(open_trades)} position(s) ({scope})"
+        )
+
+        actions = []
+        for trade in open_trades:
+            current_price = self._fetch_current_price(trade)
+            if current_price is None:
+                # Do not skip on regime shift \u2014 use fallback price
+                current_price = float(trade.get("net_credit", 0))
+                logger.warning(
+                    f"[REGIME SHIFT] Trade #{trade['id']} price unavailable \u2014 "
+                    f"using fallback ${current_price:.2f}"
+                )
+
+            spot_at_close = None
+            dte_remaining = None
+            try:
+                from datetime import date as _date
+                dte_remaining = max(
+                    0, (_date.fromisoformat(trade["expiry"]) - _date.today()).days
+                )
+            except Exception:
+                pass
+            try:
+                snap_ctx = self._moomoo.get_market_snapshot([trade["symbol"]])
+                if snap_ctx is not None and len(snap_ctx) > 0:
+                    spot_at_close = float(
+                        snap_ctx.iloc[0].get("last_price", 0)
+                    ) or None
+            except Exception:
+                pass
+
+            pnl = self._trade_manager.close_trade(
+                trade_id=            trade["id"],
+                close_price=         current_price,
+                close_reason=        "regime_shift",
+                symbol=              trade["symbol"],
+                strategy_name=       trade["strategy_name"],
+                spot_price_at_close= spot_at_close,
+                dte_at_close=        dte_remaining,
+                iv_rank_at_close=    None,
+                vix_at_close=        None,
+                atm_iv_at_close=     None,
+                rsi_at_close=        None,
+                pct_b_at_close=      None,
+            )
+
+            action = {
+                "trade_id":    trade["id"],
+                "symbol":      trade["symbol"],
+                "strategy":    trade["strategy_name"],
+                "reason":      "regime_shift",
+                "close_price": current_price,
+                "pnl":         pnl,
+                "urgency":     "immediate",
+            }
+            logger.warning(
+                f"[REGIME SHIFT] CLOSED: #{trade['id']} {trade['symbol']} "
+                f"{trade['strategy_name']} | P&L=${pnl:+.2f}"
+            )
+            actions.append(action)
+
+        return actions
+
     # ── Private Methods ───────────────────────────────────────────
 
     def _check_position(self, trade: Dict) -> Optional[Dict]:
@@ -334,6 +425,7 @@ class PositionMonitor:
             "stop_loss":         "stop_loss",
             "take_profit":       "take_profit",
             "dte_close":         "take_profit",     # Treat as take_profit for ledger
+            "regime_shift":      "regime_shift",    # HMM exit mandate
         }
         return mapping.get(exit_reason, "manual")
 

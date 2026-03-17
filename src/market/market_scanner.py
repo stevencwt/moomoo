@@ -29,8 +29,7 @@ from src.market.options_analyser import OptionsAnalyser
 from src.market.iv_rank_calculator import IVRankCalculator
 from src.market.regime_detector import RegimeDetector
 try:
-    from src.market.regime_bridge import RegimeBridge
-    _BRIDGE = RegimeBridge()
+    from src.market.regime_bridge import bridge_instance as _BRIDGE
 except Exception as _e:
     _BRIDGE = None
     import logging as _logging
@@ -92,13 +91,17 @@ class MarketScanner:
                 snapshots.append(snap)
                 logger.info(
                     f"✅ {symbol} | price={snap.spot_price:.2f} | "
-                    f"regime={snap.market_regime} | "
+                    f"regime={snap.market_regime} "
+                    f"[src=v2] | "
                     f"IV_rank={snap.options_context.iv_rank:.0f} | "
                     f"%B={snap.technicals.pct_b:.2f} | "
                     f"RSI={snap.technicals.rsi:.0f} | "
-                    f"regime_v2={snap.regime_v2.get('consensus_state','—') if snap.regime_v2 else '—'}/"
-                    f"{snap.regime_v2.get('recommended_logic','—') if snap.regime_v2 else '—'} "
-                    f"(conf={snap.regime_v2.get('confidence_score',0):.2f})" if snap.regime_v2 else ""
+                    f"v2={snap.regime_v2.get('consensus_state','—') if snap.regime_v2 else '[v1 fallback]'}"
+                    f"/conf={snap.regime_v2.get('confidence_score',0):.2f}" if snap.regime_v2 else
+                    f"regime={snap.market_regime} [src=v1 fallback] | "
+                    f"IV_rank={snap.options_context.iv_rank:.0f} | "
+                    f"%B={snap.technicals.pct_b:.2f} | "
+                    f"RSI={snap.technicals.rsi:.0f}"
                 )
             except Exception as e:
                 logger.error(f"❌ Failed to scan {symbol}: {e}", exc_info=True)
@@ -131,13 +134,11 @@ class MarketScanner:
         df_with_indicators = self._tech.compute_all(ohlcv)
         technicals = self._tech.extract_latest(df_with_indicators)
 
-        # ── Step 2: VIX + Regime ──────────────────────────────────
+        # ── Step 2: VIX ──────────────────────────────────────────
         vix = self._yfinance.get_current_vix()
-        market_regime = self._regime.detect(technicals, vix)
 
-        # ── Step 2b: Regime v2 (HMM/Hurst — additive, non-breaking) ──
-        # Fetch 2y history — HMM needs 200+ clean bars for stable training.
-        # yfinance 60-min cache makes this second fetch nearly free.
+        # ── Step 2b: Regime v2 (HMM/Hurst — PRIMARY source) ────
+        # 2y history for stable HMM training (yfinance 60-min cache = nearly free)
         regime_v2 = None
         if _BRIDGE is not None:
             try:
@@ -145,6 +146,28 @@ class MarketScanner:
                 regime_v2 = _BRIDGE.update(symbol, ohlcv_long)
             except Exception as _e:
                 logger.debug(f'regime_v2 update skipped for {symbol}: {_e}')
+
+        # ── Step 2c: market_regime — v2 primary, v1 fallback ────
+        high_vol_vix = self._config.get('regime', {}).get(
+            'high_vol_vix_threshold', 25.0
+        )
+        if regime_v2:
+            from src.market.regime_bridge import translate_to_bot_regime
+            translated = translate_to_bot_regime(regime_v2, vix, high_vol_vix)
+            if translated is not None:
+                market_regime = translated
+                logger.debug(
+                    f"{symbol} regime v2→v1: "
+                    f"{regime_v2.get('consensus_state','?')} → {market_regime} "
+                    f"(conf={regime_v2.get('confidence_score',0):.2f} "
+                    f"vol={regime_v2.get('volatility_regime','?')} vix={vix:.1f})"
+                )
+            else:
+                market_regime = self._regime.detect(technicals, vix)
+                logger.debug(f'{symbol} v2 returned None — v1 fallback: {market_regime}')
+        else:
+            market_regime = self._regime.detect(technicals, vix)
+            logger.debug(f'{symbol} no v2 — v1 fallback: {market_regime}')
 
         # ── Step 3: Option Expiries ───────────────────────────────
         available_expiries = self._moomoo.get_option_expiries(symbol)

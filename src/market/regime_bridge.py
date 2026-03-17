@@ -190,6 +190,16 @@ class RegimeBridge:
         }
 
 
+# ── Module-level singleton ───────────────────────────────────────────────────
+# Shared instance used by both market_scanner and bot_scheduler.
+# Importable as: from src.market.regime_bridge import bridge_instance
+bridge_instance: Optional[RegimeBridge] = None
+try:
+    bridge_instance = RegimeBridge()
+except Exception as _e:
+    logger.warning(f'[RegimeBridge] Failed to create singleton: {_e}')
+
+
 # ── Regime translation helpers ────────────────────────────────────────────────
 
 def translate_to_bot_regime(regime_v2: dict, vix: float,

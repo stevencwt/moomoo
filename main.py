@@ -21,7 +21,7 @@ import yaml
 # Ensure src/ is on the Python path when running from project root
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from src.logger import get_logger
+from src.logger import get_logger, setup_logger
 from src.scheduler.bot_scheduler import BotScheduler
 
 logger = get_logger("main")
@@ -312,6 +312,7 @@ def main():
     args   = parser.parse_args()
     config = load_config(args.config)
     validate_config(config)
+    setup_logger(config)   # attach file handler → creates logs/bot.log
 
     if args.scan_now:
         run_scan_now(config)

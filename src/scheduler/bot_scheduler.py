@@ -61,6 +61,14 @@ from src.monitoring.validation_reporter import ValidationReporter
 from src.notifier.signal_notifier import SignalNotifier
 from src.logger import get_logger
 
+# ── LLM Regime (optional — graceful degradation if not installed) ────────────
+try:
+    from src.market.llm_regime_bridge import LLMRegimeBridgePool
+    from src.market.regime_combined import CombinedRegime
+    _LLM_REGIME_AVAILABLE = True
+except ImportError:
+    _LLM_REGIME_AVAILABLE = False
+
 logger = get_logger("scheduler.bot_scheduler")
 
 ET = ZoneInfo("America/New_York")
@@ -190,6 +198,8 @@ class BotScheduler:
         self._monitor_count   = 0
         self._morning_snapshots: dict = {}   # symbol → MarketSnapshot from 09:35 scan
         self._last_unrealised_pnl: float = 0.0  # updated by monitor job, used by heartbeat
+        self._llm_pool  = None   # LLMRegimeBridgePool — set by build()
+        self._combined  = None   # CombinedRegime — set by build()
 
         logger.info(
             f"BotScheduler initialised | mode={self._mode} | "
@@ -248,7 +258,37 @@ class BotScheduler:
 
         logger.info("All components built successfully")
 
-        return cls(
+        # ── LLM Regime pool (optional) ────────────────────────────────────
+        llm_pool       = None
+        combined_regime = None
+        if _LLM_REGIME_AVAILABLE:
+            try:
+                from src.market.regime_bridge import bridge_instance as _qbridge
+                _watchlist = config.get("universe", {}).get("watchlist", [])
+                _llm_cfg   = config.get("llm_regime", {})
+                llm_pool   = LLMRegimeBridgePool(
+                    symbols           = _watchlist,
+                    yfinance          = yfinance,
+                    provider          = _llm_cfg.get("provider", "gemini"),
+                    htf_interval_secs = _llm_cfg.get("htf_interval_secs", 7200),   # 2h
+                    ltf_interval_secs = _llm_cfg.get("ltf_interval_secs", 1800),   # 30min
+                    min_confidence    = _llm_cfg.get("min_confidence", 3),
+                )
+                combined_regime = CombinedRegime(
+                    quant_bridge = _qbridge,
+                    llm_pool     = llm_pool,
+                )
+                logger.info(
+                    f"[LLM Regime] pool initialized | "
+                    f"{len(_watchlist)} symbols | "
+                    f"provider={_llm_cfg.get('provider','gemini')} | "
+                    f"HTF={_llm_cfg.get('htf_interval_secs',7200)//3600}h "
+                    f"LTF={_llm_cfg.get('ltf_interval_secs',1800)//60}min"
+                )
+            except Exception as _le:
+                logger.warning(f"[LLM Regime] pool init failed: {_le}")
+
+        _scheduler = cls(
             config=config, moomoo=data_connector, yfinance=yfinance,
             scanner=scanner, registry=registry, guard=guard,
             router=router, ledger=ledger, manager=manager,
@@ -256,6 +296,9 @@ class BotScheduler:
             options_analyser=options, iv_calculator=iv_calculator,
             notifier=notifier, exec_connector=exec_connector,
         )
+        _scheduler._llm_pool = llm_pool
+        _scheduler._combined = combined_regime
+        return _scheduler
 
     # ── Public API ────────────────────────────────────────────────
 
@@ -883,6 +926,65 @@ class BotScheduler:
                 self._write_positions_mark(summary)
             except Exception as _me:
                 logger.warning(f"[MONITOR] Could not write positions_mark.json: {_me}")
+
+        # ── LLM Regime update (market hours only — conserves API tokens) ──
+        # Runs every 30-min monitor cycle but LLMRegimeBridgePool.maybe_update()
+        # only fires the LLM when the update_interval has elapsed (default: daily).
+        # Returns in <1ms — background thread spawned when due.
+        if market_open and self._llm_pool is not None:
+            _all_syms = set(
+                self._config.get("universe", {}).get("watchlist", [])
+            )
+            for _sym in _all_syms:
+                try:
+                    _ohlcv = self._yfinance.get_daily_ohlcv(_sym, period="2y")
+                    self._llm_pool.maybe_update(_sym, _ohlcv)
+                except Exception as _le:
+                    logger.debug(f"[LLM Regime] {_sym} update skipped: {_le}")
+            # Log combined state for all open positions (informational)
+            if self._combined is not None:
+                _open_syms = {t['symbol'] for t in self._ledger.get_open_trades()}
+                for _sym in _open_syms:
+                    _state = self._combined.get_state(_sym)
+                    _dir   = _state.get('direction', '—')
+                    _src   = _state.get('direction_source', '—')
+                    _htf   = _state.get('llm_htf_regime') or '—'
+                    _ltf   = _state.get('llm_ltf_regime') or '—'
+                    _stale = _state.get('llm_stale', True)
+                    if not _stale:
+                        logger.info(
+                            f"[LLM Regime] {_sym}: direction={_dir} "
+                            f"(src={_src}) HTF={_htf} LTF={_ltf}"
+                        )
+
+        # ── Regime exit mandate check (fires before normal exit rules) ──
+        # If any open position's symbol has regime_v2.exit_mandate=True,
+        # force-close it immediately per spec Section 5.6.
+        mandate_actions = []
+        if self._morning_snapshots:
+            from src.market.regime_bridge import bridge_instance as _regime_bridge
+            if _regime_bridge is not None:
+                open_syms = {t['symbol'] for t in self._ledger.get_open_trades()}
+                for sym in open_syms:
+                    r2 = _regime_bridge.get_regime(sym)
+                    if r2 and r2.get('exit_mandate'):
+                        logger.warning(
+                            f'[REGIME SHIFT] exit_mandate=True for {sym} | '
+                            f'consensus={r2.get("consensus_state","?")} | '
+                            f'vol={r2.get("volatility_regime","?")} | '
+                            f'break={r2.get("signals",{}).get("structural_break","?")}'
+                        )
+                        closed = self._monitor.close_all_regime_shift(symbol=sym)
+                        mandate_actions.extend(closed)
+        if mandate_actions:
+            _blank()
+            print(f'  ── ⚠️  REGIME SHIFT — {len(mandate_actions)} position(s) force-closed:')
+            for a in mandate_actions:
+                print(
+                    f"    🚨 REGIME SHIFT  #{a.get('trade_id','?')}  "
+                    f"{a['symbol']}  {a['strategy']}  "
+                    f"P&L ${a['pnl']:+.2f}"
+                )
 
         # Run actual exit checks
         actions = self._monitor.run_cycle(force=force)
