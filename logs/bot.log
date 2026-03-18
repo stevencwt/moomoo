@@ -495,3 +495,19 @@
 2026-03-18 04:47:05 | INFO     | options_bot.connectors.ibkr    | Order 120 cancelled
 2026-03-18 04:47:07 | INFO     | options_bot.connectors.ibkr    | Disconnected from IBKR
 2026-03-18 04:47:42 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 05:26:47 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 06:05:53 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 06:35:54 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 07:11:41 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 07:41:41 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 08:12:05 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 08:42:05 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 09:12:10 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 09:46:11 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 10:16:28 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 13:29:35 | INFO     | options_bot.scheduler.bot_scheduler | Shutdown signal received (2) — stopping...
+2026-03-18 13:29:35 | INFO     | options_bot.scheduler.bot_scheduler | Scheduler stopping...
+2026-03-18 13:29:35 | INFO     | options_bot.connectors.moomoo  | Quote context closed
+2026-03-18 13:29:35 | INFO     | options_bot.connectors.moomoo  | Trade context closed
+2026-03-18 13:29:35 | WARNING  | options_bot.connectors.ibkr    | Error during disconnect: [Errno 57] Socket is not connected
+2026-03-18 13:29:35 | INFO     | options_bot.scheduler.bot_scheduler | Scheduler stopped
