@@ -511,3 +511,157 @@
 2026-03-18 13:29:35 | INFO     | options_bot.connectors.moomoo  | Trade context closed
 2026-03-18 13:29:35 | WARNING  | options_bot.connectors.ibkr    | Error during disconnect: [Errno 57] Socket is not connected
 2026-03-18 13:29:35 | INFO     | options_bot.scheduler.bot_scheduler | Scheduler stopped
+2026-03-18 23:08:45 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-18 23:08:45 | INFO     | options_bot.scheduler.bot_scheduler | Building BotScheduler | mode=paper | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-18 23:08:45 | INFO     | options_bot.connectors.broker_factory | Building connectors | data=moomoo | execution=ibkr
+2026-03-18 23:08:45 | INFO     | options_bot.connectors.moomoo  | MooMooConnector initialised | host=127.0.0.1:11111 | trade_env=SIMULATE | mode=paper
+2026-03-18 23:08:45 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=1 | mode=paper
+2026-03-18 23:08:45 | INFO     | options_bot.scheduler.bot_scheduler | Connectors | data=moomoo | execution=ibkr | shared=no
+2026-03-18 23:08:45 | INFO     | options_bot.connectors.yfinance | YFinanceConnector initialised
+2026-03-18 23:08:45 | INFO     | options_bot.market.iv_rank_calculator | IVRankCalculator initialised | db=data/iv_history.db
+2026-03-18 23:08:45 | INFO     | options_bot.market.regime_detector | RegimeDetector | high_vol_vix=25.0 | bull_rsi>=55.0 | bear_rsi<=45.0
+2026-03-18 23:08:45 | INFO     | options_bot.market.options_analyser | OptionsAnalyser | DTE=21-45 | delta=0.2-0.35 | earnings_buffer=7d
+2026-03-18 23:08:45 | INFO     | options_bot.market.market_scanner | MarketScanner initialised | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-18 23:08:45 | INFO     | options_bot.strategies.registry | StrategyRegistry initialised
+2026-03-18 23:08:45 | INFO     | options_bot.strategies.covered_call | Strategy 'covered_call' initialised | enabled=True
+2026-03-18 23:08:45 | INFO     | options_bot.strategies.registry | Registered strategy 'covered_call' | enabled=True | total=1
+2026-03-18 23:08:45 | INFO     | options_bot.strategies.bear_call_spread | Strategy 'bear_call_spread' initialised | enabled=True
+2026-03-18 23:08:45 | INFO     | options_bot.strategies.registry | Registered strategy 'bear_call_spread' | enabled=True | total=2
+2026-03-18 23:08:45 | INFO     | options_bot.strategies.bull_put_spread | Strategy 'bull_put_spread' initialised | enabled=True
+2026-03-18 23:08:45 | INFO     | options_bot.strategies.registry | Registered strategy 'bull_put_spread' | enabled=True | total=3
+2026-03-18 23:08:45 | INFO     | options_bot.execution.portfolio_guard | PortfolioGuard initialised | max_positions=8 | max_risk_pct=5% | max_total_risk_pct=20% | max_trades/day=3 | portfolio=$100,000
+2026-03-18 23:08:45 | INFO     | options_bot.execution.order_router | OrderRouter initialised | mode=paper | fill_timeout=60s
+2026-03-18 23:08:45 | INFO     | options_bot.execution.paper_ledger | PaperLedger initialised | db=data/paper_trades.db
+2026-03-18 23:08:45 | INFO     | options_bot.execution.portfolio_guard | PortfolioGuard restored 4 open position(s) from ledger | trades today=0 (incl. closed/stopped)
+2026-03-18 23:08:45 | INFO     | options_bot.execution.signal_ranker | SignalRanker initialised | enabled=True | weights: iv_rank=0.4 buffer=0.35 rr=0.25
+2026-03-18 23:08:45 | INFO     | options_bot.execution.trade_manager | TradeManager initialised | mode=paper | ranker_enabled=True
+2026-03-18 23:08:45 | INFO     | options_bot.monitoring.exit_evaluator | ExitEvaluator | stop_loss=3.0×credit | min_hold=5d | take_profit=50% | dte_close=21d
+2026-03-18 23:08:45 | INFO     | options_bot.monitoring.position_monitor | PositionMonitor initialised
+2026-03-18 23:08:45 | INFO     | options_bot.monitoring.validation_reporter | ValidationReporter | min_trades=10 | min_win_rate=60% | min_sharpe=0.5
+2026-03-18 23:08:45 | INFO     | options_bot.scheduler.bot_scheduler | All components built successfully
+2026-03-18 23:08:45 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-18 23:08:45 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-18 23:08:45 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-18 23:08:45 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-18 23:08:45 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-18 23:08:45 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-18 23:08:45 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-18 23:08:45 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-18 23:08:45 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridgePool] 8 symbols | provider=gemini | HTF=2h LTF=30min
+2026-03-18 23:08:45 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] pool initialized | 8 symbols | provider=gemini | HTF=2h LTF=30min
+2026-03-18 23:08:45 | INFO     | options_bot.scheduler.bot_scheduler | BotScheduler initialised | mode=paper | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-18 23:08:45 | INFO     | options_bot.main               | Starting Options Bot | mode=paper | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-18 23:08:45 | INFO     | options_bot.connectors.moomoo  | Connecting to OpenD...
+2026-03-18 23:08:46 | INFO     | options_bot.connectors.moomoo  | Quote context opened
+2026-03-18 23:08:46 | INFO     | options_bot.connectors.moomoo  | Trade context opened
+2026-03-18 23:08:46 | INFO     | options_bot.connectors.moomoo  | ✅ Connected to OpenD successfully
+2026-03-18 23:08:46 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-18 23:08:46 | INFO     | options_bot.connectors.ibkr    | ✅ Connected to IBKR | account=U18705798
+2026-03-18 23:08:51 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-18 23:08:51 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-18 23:08:51 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 23:08:51 | INFO     | options_bot.scheduler.bot_scheduler | Schedule time conversion: 09:35 ET → 21:35 local (system timezone: +08)
+2026-03-18 23:08:51 | INFO     | options_bot.scheduler.bot_scheduler | Schedule time conversion: 16:05 ET → 04:05 local (system timezone: +08)
+2026-03-18 23:08:51 | INFO     | options_bot.scheduler.bot_scheduler | Schedule time conversion: 16:30 ET → 04:30 local (system timezone: +08)
+2026-03-18 23:08:51 | INFO     | options_bot.scheduler.bot_scheduler | [SCAN JOB] Starting | 11:08 ET
+2026-03-18 23:08:51 | INFO     | options_bot.market.market_scanner | Scanning 8 symbols...
+2026-03-18 23:09:00 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (12515ms)
+2026-03-18 23:09:02 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] HTF: RANGING conf=4 dir=BOTH (10950ms)
+2026-03-18 23:09:02 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (13825ms)
+2026-03-18 23:09:02 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (13063ms)
+2026-03-18 23:09:03 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] LTF: RANGING conf=4 dir=BOTH (11947ms) → combined: BOTH
+2026-03-18 23:09:04 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] HTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (14841ms)
+2026-03-18 23:09:04 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] LTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (14321ms) → combined: SHORT_ONLY
+2026-03-18 23:09:06 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (16973ms) → combined: SHORT_ONLY
+2026-03-18 23:09:06 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] HTF: WEAK_DOWNTREND conf=4 dir=SHORT_ONLY (15982ms)
+2026-03-18 23:09:06 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] LTF: RANGING conf=4 dir=BOTH (17195ms) → combined: SHORT_ONLY
+2026-03-18 23:09:07 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] LTF: STRONG_UPTREND conf=4 dir=LONG_ONLY (20096ms) → combined: LONG_ONLY
+2026-03-18 23:09:07 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (19425ms) → combined: SHORT_ONLY
+2026-03-18 23:09:08 | INFO     | options_bot.market.regime_bridge | [RegimeBridge] US.SPY bootstrap: 502 bars | consensus=CHOP_NEUTRAL | recommended=OPTIONS_INCOME | vol=MODERATE | conf=0.52
+2026-03-18 23:09:08 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] HTF: WEAK_UPTREND conf=3 dir=LONG_ONLY (17047ms)
+2026-03-18 23:09:08 | WARNING  | options_bot.market.iv_rank_calculator | US.SPY: Only 14 days of IV history stored. Using bootstrap estimate: 62.4 (needs 30+ days for reliability)
+2026-03-18 23:09:08 | WARNING  | options_bot.market.market_scanner | US.SPY: IV Rank quality is 'unavailable'. Store daily IV for 30+ days for reliable signals.
+2026-03-18 23:09:08 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] LTF: RANGING conf=4 dir=BOTH (17172ms) → combined: LONG_ONLY
+2026-03-18 23:09:08 | INFO     | options_bot.market.market_scanner | ✅ US.SPY | price=667.72 | regime=neutral [src=v2] | IV_rank=62 | %B=0.16 | RSI=40 | v2=CHOP_NEUTRAL/conf=0.52
+2026-03-18 23:09:08 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] HTF: RANGING conf=4 dir=BOTH (20695ms)
+2026-03-18 23:09:09 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] LTF: TRANSITION conf=3 dir=NO_TRADE (20114ms) → combined: WAIT
+2026-03-18 23:09:19 | INFO     | options_bot.market.regime_bridge | [RegimeBridge] US.QQQ bootstrap: 502 bars | consensus=CHOP_NEUTRAL | recommended=OPTIONS_INCOME | vol=MODERATE | conf=0.71
+2026-03-18 23:09:19 | WARNING  | options_bot.market.iv_rank_calculator | US.QQQ: Only 14 days of IV history stored. Using bootstrap estimate: 62.4 (needs 30+ days for reliability)
+2026-03-18 23:09:19 | WARNING  | options_bot.market.market_scanner | US.QQQ: IV Rank quality is 'unavailable'. Store daily IV for 30+ days for reliable signals.
+2026-03-18 23:09:19 | INFO     | options_bot.market.market_scanner | ✅ US.QQQ | price=601.24 | regime=neutral [src=v2] | IV_rank=62 | %B=0.31 | RSI=46 | v2=CHOP_NEUTRAL/conf=0.71
+2026-03-18 23:09:27 | INFO     | options_bot.market.regime_bridge | [RegimeBridge] US.AAPL bootstrap: 502 bars | consensus=CHOP_NEUTRAL | recommended=OPTIONS_INCOME | vol=MODERATE | conf=0.74
+2026-03-18 23:09:27 | WARNING  | options_bot.market.iv_rank_calculator | US.AAPL: Only 14 days of IV history stored. Using bootstrap estimate: 62.4 (needs 30+ days for reliability)
+2026-03-18 23:09:27 | WARNING  | options_bot.market.market_scanner | US.AAPL: IV Rank quality is 'unavailable'. Store daily IV for 30+ days for reliable signals.
+2026-03-18 23:09:28 | INFO     | options_bot.market.market_scanner | ✅ US.AAPL | price=252.74 | regime=neutral [src=v2] | IV_rank=62 | %B=0.16 | RSI=39 | v2=CHOP_NEUTRAL/conf=0.74
+2026-03-18 23:09:40 | INFO     | options_bot.market.regime_bridge | [RegimeBridge] US.MSFT bootstrap: 502 bars | consensus=CHOP_NEUTRAL | recommended=OPTIONS_INCOME | vol=MODERATE | conf=0.56
+2026-03-18 23:09:40 | WARNING  | options_bot.market.iv_rank_calculator | US.MSFT: Only 14 days of IV history stored. Using bootstrap estimate: 62.4 (needs 30+ days for reliability)
+2026-03-18 23:09:40 | WARNING  | options_bot.market.market_scanner | US.MSFT: IV Rank quality is 'unavailable'. Store daily IV for 30+ days for reliable signals.
+2026-03-18 23:09:41 | INFO     | options_bot.market.market_scanner | ✅ US.MSFT | price=395.75 | regime=neutral [src=v2] | IV_rank=62 | %B=0.33 | RSI=40 | v2=CHOP_NEUTRAL/conf=0.56
+2026-03-18 23:09:52 | INFO     | options_bot.market.regime_bridge | [RegimeBridge] US.AMZN bootstrap: 502 bars | consensus=CHOP_NEUTRAL | recommended=OPTIONS_INCOME | vol=LOW_STABLE | conf=0.74
+2026-03-18 23:09:52 | WARNING  | options_bot.market.iv_rank_calculator | US.AMZN: Only 14 days of IV history stored. Using bootstrap estimate: 62.4 (needs 30+ days for reliability)
+2026-03-18 23:09:52 | WARNING  | options_bot.market.market_scanner | US.AMZN: IV Rank quality is 'unavailable'. Store daily IV for 30+ days for reliable signals.
+2026-03-18 23:09:52 | INFO     | options_bot.market.market_scanner | ✅ US.AMZN | price=212.17 | regime=neutral [src=v2] | IV_rank=62 | %B=0.58 | RSI=48 | v2=CHOP_NEUTRAL/conf=0.74
+2026-03-18 23:10:01 | INFO     | options_bot.market.regime_bridge | [RegimeBridge] US.GOOGL bootstrap: 502 bars | consensus=CHOP_NEUTRAL | recommended=OPTIONS_INCOME | vol=LOW_STABLE | conf=0.63
+2026-03-18 23:10:01 | WARNING  | options_bot.market.iv_rank_calculator | US.GOOGL: Only 14 days of IV history stored. Using bootstrap estimate: 62.4 (needs 30+ days for reliability)
+2026-03-18 23:10:01 | WARNING  | options_bot.market.market_scanner | US.GOOGL: IV Rank quality is 'unavailable'. Store daily IV for 30+ days for reliable signals.
+2026-03-18 23:10:01 | INFO     | options_bot.market.market_scanner | ✅ US.GOOGL | price=310.91 | regime=neutral [src=v2] | IV_rank=62 | %B=0.73 | RSI=51 | v2=CHOP_NEUTRAL/conf=0.63
+2026-03-18 23:10:11 | INFO     | options_bot.market.regime_bridge | [RegimeBridge] US.NVDA bootstrap: 502 bars | consensus=CHOP_NEUTRAL | recommended=OPTIONS_INCOME | vol=MODERATE | conf=0.73
+2026-03-18 23:10:11 | WARNING  | options_bot.market.iv_rank_calculator | US.NVDA: Only 14 days of IV history stored. Using bootstrap estimate: 62.4 (needs 30+ days for reliability)
+2026-03-18 23:10:11 | WARNING  | options_bot.market.market_scanner | US.NVDA: IV Rank quality is 'unavailable'. Store daily IV for 30+ days for reliable signals.
+2026-03-18 23:10:11 | INFO     | options_bot.market.market_scanner | ✅ US.NVDA | price=183.02 | regime=neutral [src=v2] | IV_rank=62 | %B=0.42 | RSI=49 | v2=CHOP_NEUTRAL/conf=0.73
+2026-03-18 23:10:24 | INFO     | options_bot.market.regime_bridge | [RegimeBridge] US.TSLA bootstrap: 502 bars | consensus=CHOP_NEUTRAL | recommended=OPTIONS_INCOME | vol=MODERATE | conf=0.77
+2026-03-18 23:10:24 | WARNING  | options_bot.market.iv_rank_calculator | US.TSLA: Only 15 days of IV history stored. Using bootstrap estimate: 62.4 (needs 30+ days for reliability)
+2026-03-18 23:10:24 | WARNING  | options_bot.market.market_scanner | US.TSLA: IV Rank quality is 'unavailable'. Store daily IV for 30+ days for reliable signals.
+2026-03-18 23:10:24 | INFO     | options_bot.market.market_scanner | ✅ US.TSLA | price=399.57 | regime=neutral [src=v2] | IV_rank=62 | %B=0.39 | RSI=45 | v2=CHOP_NEUTRAL/conf=0.77
+2026-03-18 23:10:24 | INFO     | options_bot.market.market_scanner | Scan complete: 8/8 symbols
+2026-03-18 23:10:24 | INFO     | options_bot.strategies.bull_put_spread | ✅ BULL PUT SPREAD SIGNAL: US.QQQ | sell=588.0 buy=578.0 | credit=$2.39 | max_loss=$761 | R/R=0.31 | DTE=30
+2026-03-18 23:10:24 | INFO     | options_bot.strategies.registry | US.QQQ: 1 signal(s) generated [bull_put_spread]
+2026-03-18 23:10:24 | INFO     | options_bot.strategies.bull_put_spread | ✅ BULL PUT SPREAD SIGNAL: US.MSFT | sell=385.0 buy=375.0 | credit=$2.48 | max_loss=$752 | R/R=0.33 | DTE=30
+2026-03-18 23:10:24 | INFO     | options_bot.strategies.registry | US.MSFT: 1 signal(s) generated [bull_put_spread]
+2026-03-18 23:10:24 | INFO     | options_bot.strategies.bear_call_spread | ✅ BEAR CALL SPREAD SIGNAL: US.AMZN | sell=225.0 buy=235.0 | credit=$1.71 | max_loss=$830 | R/R=0.21 | DTE=30
+2026-03-18 23:10:25 | INFO     | options_bot.strategies.bull_put_spread | ✅ BULL PUT SPREAD SIGNAL: US.AMZN | sell=205.0 buy=195.0 | credit=$2.25 | max_loss=$775 | R/R=0.29 | DTE=30
+2026-03-18 23:10:25 | INFO     | options_bot.strategies.registry | US.AMZN: 2 signal(s) generated [bear_call_spread, bull_put_spread]
+2026-03-18 23:10:25 | INFO     | options_bot.market.options_analyser | Earnings conflict: earnings=2026-04-24 falls within 2026-03-18 to 2026-04-24 (expiry=2026-04-17 +7d buffer)
+2026-03-18 23:10:25 | INFO     | options_bot.market.options_analyser | Earnings conflict: earnings=2026-04-24 falls within 2026-03-18 to 2026-04-24 (expiry=2026-04-17 +7d buffer)
+2026-03-18 23:10:25 | INFO     | options_bot.strategies.bear_call_spread | ✅ BEAR CALL SPREAD SIGNAL: US.NVDA | sell=195.0 buy=205.0 | credit=$1.80 | max_loss=$820 | R/R=0.22 | DTE=30
+2026-03-18 23:10:25 | INFO     | options_bot.strategies.bull_put_spread | ✅ BULL PUT SPREAD SIGNAL: US.NVDA | sell=175.0 buy=165.0 | credit=$2.14 | max_loss=$786 | R/R=0.27 | DTE=30
+2026-03-18 23:10:25 | INFO     | options_bot.strategies.registry | US.NVDA: 2 signal(s) generated [bear_call_spread, bull_put_spread]
+2026-03-18 23:10:25 | INFO     | options_bot.market.options_analyser | Earnings conflict: earnings=2026-04-22 falls within 2026-03-18 to 2026-04-24 (expiry=2026-04-17 +7d buffer)
+2026-03-18 23:10:25 | INFO     | options_bot.strategies.registry | Universe evaluation complete: 8 symbols → 6 total signals
+2026-03-18 23:10:25 | INFO     | options_bot.execution.signal_ranker | SignalRanker: 6 candidate(s) ranked | weights: iv=0.4 buf=0.35 rr=0.25
+2026-03-18 23:10:25 | INFO     | options_bot.execution.signal_ranker |   # 1  US.NVDA    bear_call_spread       iv= 62.4 (0.00)  buf=  6.5% (1.00)  rr=0.220 (0.12)  → score=0.3800
+2026-03-18 23:10:25 | INFO     | options_bot.execution.signal_ranker |   # 2  US.NVDA    bull_put_spread        iv= 62.4 (0.00)  buf=  4.4% (0.50)  rr=0.272 (0.54)  → score=0.3107
+2026-03-18 23:10:25 | INFO     | options_bot.execution.signal_ranker |   # 3  US.AMZN    bear_call_spread       iv= 62.4 (0.00)  buf=  6.0% (0.89)  rr=0.205 (0.00)  → score=0.3098
+2026-03-18 23:10:25 | INFO     | options_bot.execution.signal_ranker |   # 4  US.MSFT    bull_put_spread        iv= 62.4 (0.00)  buf=  2.7% (0.12)  rr=0.329 (1.00)  → score=0.2918
+2026-03-18 23:10:25 | INFO     | options_bot.execution.signal_ranker |   # 5  US.AMZN    bull_put_spread        iv= 62.4 (0.00)  buf=  3.4% (0.27)  rr=0.290 (0.69)  → score=0.2667
+2026-03-18 23:10:25 | INFO     | options_bot.execution.signal_ranker |   # 6  US.QQQ     bull_put_spread        iv= 62.4 (0.00)  buf=  2.2% (0.00)  rr=0.314 (0.88)  → score=0.2200
+2026-03-18 23:10:25 | INFO     | options_bot.execution.signal_ranker | SignalRanker: 6 candidate(s) ranked | weights: iv=0.4 buf=0.35 rr=0.25
+2026-03-18 23:10:25 | INFO     | options_bot.execution.signal_ranker |   # 1  US.NVDA    bear_call_spread       iv= 62.4 (0.00)  buf=  6.5% (1.00)  rr=0.220 (0.12)  → score=0.3800
+2026-03-18 23:10:25 | INFO     | options_bot.execution.signal_ranker |   # 2  US.NVDA    bull_put_spread        iv= 62.4 (0.00)  buf=  4.4% (0.50)  rr=0.272 (0.54)  → score=0.3107
+2026-03-18 23:10:25 | INFO     | options_bot.execution.signal_ranker |   # 3  US.AMZN    bear_call_spread       iv= 62.4 (0.00)  buf=  6.0% (0.89)  rr=0.205 (0.00)  → score=0.3098
+2026-03-18 23:10:25 | INFO     | options_bot.execution.signal_ranker |   # 4  US.MSFT    bull_put_spread        iv= 62.4 (0.00)  buf=  2.7% (0.12)  rr=0.329 (1.00)  → score=0.2918
+2026-03-18 23:10:25 | INFO     | options_bot.execution.signal_ranker |   # 5  US.AMZN    bull_put_spread        iv= 62.4 (0.00)  buf=  3.4% (0.27)  rr=0.290 (0.69)  → score=0.2667
+2026-03-18 23:10:25 | INFO     | options_bot.execution.signal_ranker |   # 6  US.QQQ     bull_put_spread        iv= 62.4 (0.00)  buf=  2.2% (0.00)  rr=0.314 (0.88)  → score=0.2200
+2026-03-18 23:10:25 | INFO     | options_bot.execution.trade_manager | SignalRanker: 6 candidate(s) ranked | top candidate: US.NVDA bear_call_spread score=0.3800
+2026-03-18 23:10:25 | INFO     | options_bot.execution.trade_manager | Processing signal: US.NVDA bear_call_spread | regime=neutral | credit=$1.80 | mode=paper
+2026-03-18 23:10:25 | INFO     | options_bot.execution.portfolio_guard | BLOCKED [US.NVDA]: Duplicate position: US.NVDA bear_call_spread already open (opened 2026-03-18)
+2026-03-18 23:10:25 | INFO     | options_bot.execution.trade_manager | Processing signal: US.NVDA bull_put_spread | regime=neutral | credit=$2.14 | mode=paper
+2026-03-18 23:10:25 | INFO     | options_bot.execution.portfolio_guard | BLOCKED [US.NVDA]: Iron condor prevention: US.NVDA already has an open bear_call_spread position. Managing both sides on the same symbol requires iron condor logic not yet implemented. Use different symbols.
+2026-03-18 23:10:25 | INFO     | options_bot.execution.trade_manager | Processing signal: US.AMZN bear_call_spread | regime=neutral | credit=$1.71 | mode=paper
+2026-03-18 23:10:25 | INFO     | options_bot.execution.portfolio_guard | BLOCKED [US.AMZN]: Iron condor prevention: US.AMZN already has an open bull_put_spread position. Managing both sides on the same symbol requires iron condor logic not yet implemented. Use different symbols.
+2026-03-18 23:10:25 | INFO     | options_bot.execution.trade_manager | Processing signal: US.MSFT bull_put_spread | regime=neutral | credit=$2.48 | mode=paper
+2026-03-18 23:10:25 | INFO     | options_bot.execution.portfolio_guard | BLOCKED [US.MSFT]: Duplicate position: US.MSFT bull_put_spread already open (opened 2026-03-18)
+2026-03-18 23:10:25 | INFO     | options_bot.execution.trade_manager | Processing signal: US.AMZN bull_put_spread | regime=neutral | credit=$2.25 | mode=paper
+2026-03-18 23:10:25 | INFO     | options_bot.execution.portfolio_guard | BLOCKED [US.AMZN]: Duplicate position: US.AMZN bull_put_spread already open (opened 2026-03-18)
+2026-03-18 23:10:25 | INFO     | options_bot.execution.trade_manager | Processing signal: US.QQQ bull_put_spread | regime=neutral | credit=$2.39 | mode=paper
+2026-03-18 23:10:25 | INFO     | options_bot.execution.portfolio_guard | BLOCKED [US.QQQ]: Iron condor prevention: US.QQQ already has an open bear_call_spread position. Managing both sides on the same symbol requires iron condor logic not yet implemented. Use different symbols.
+2026-03-18 23:10:25 | INFO     | options_bot.execution.trade_manager | Batch complete: 6 signals | 0 executed | 6 blocked | 0 skipped
+2026-03-18 23:10:25 | INFO     | options_bot.scheduler.bot_scheduler | [SCAN JOB] Complete in 93.5s | 8 symbols | 6 signals
+2026-03-18 23:10:25 | WARNING  | options_bot.scheduler.bot_scheduler | [SCAN JOB] Could not write scan_results.json: 'TradeResult' object has no attribute 'reject_reason'
+2026-03-18 23:10:25 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.AMZN: direction=LONG_ONLY (src=llm) HTF=WEAK_UPTREND LTF=RANGING
+2026-03-18 23:10:25 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.NVDA: direction=LONG_ONLY (src=drift) HTF=RANGING LTF=RANGING
+2026-03-18 23:10:25 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.MSFT: direction=SHORT_ONLY (src=llm) HTF=WEAK_DOWNTREND LTF=STRONG_DOWNTREND
+2026-03-18 23:10:25 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.QQQ: direction=WAIT (src=llm) HTF=DOWNTREND LTF=TRANSITION
+2026-03-18 23:10:25 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-18 23:10:25 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-18 23:10:25 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
