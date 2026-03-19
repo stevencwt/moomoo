@@ -162,30 +162,13 @@ class IBKRConnector:
         Returns:
             List of "YYYY-MM-DD" strings, sorted ascending.
         """
-        self._ensure_connected()
-        ticker = self.to_ibkr_symbol(symbol)
-        logger.debug(f"Fetching expiries for {ticker}")
-
-        stock = Stock(ticker, "SMART", "USD")
-        self._ib.qualifyContracts(stock)
-
-        chains = self._ib.reqSecDefOptParams(
-            underlyingSymbol=ticker,
-            futFopExchange="",
-            underlyingSecType="STK",
-            underlyingConId=stock.conId,
-        )
-        if not chains:
-            raise DataError(f"No option chain data for {ticker}")
-
-        chain     = next((c for c in chains if c.exchange == "SMART"), chains[0])
-        today_str = date.today().strftime("%Y%m%d")
-        expiries  = sorted([
-            self._ibkr_to_iso(e)
-            for e in chain.expirations
-            if e >= today_str
-        ])
-        logger.debug(f"{symbol}: {len(expiries)} upcoming expiries")
+        import yfinance as yf
+        ticker   = self.to_ibkr_symbol(symbol)
+        today    = date.today().isoformat()
+        expiries = sorted([e for e in (yf.Ticker(ticker).options or []) if e >= today])
+        if not expiries:
+            raise DataError(f"No option expiries found for {ticker}")
+        logger.debug(f"{symbol}: {len(expiries)} upcoming expiries via yfinance")
         return expiries
 
     def get_option_chain(
@@ -201,42 +184,30 @@ class IBKRConnector:
             DataFrame with columns: code, option_type, strike_price, strike_time
             (column names match MooMoo format for compatibility)
         """
-        self._ensure_connected()
+        # reqSecDefOptParams returns only 2 boundary strikes on SMART exchange.
+        # Use yfinance for the real listed strike ladder.
+        import yfinance as yf
         ticker   = self.to_ibkr_symbol(symbol)
         ibkr_exp = self._iso_to_ibkr(expiry)
-        logger.debug(f"Fetching chain: {ticker} {expiry} {option_type}")
+        logger.debug(f"Fetching chain: {ticker} {expiry} {option_type} via yfinance")
 
-        stock = Stock(ticker, "SMART", "USD")
-        self._ib.qualifyContracts(stock)
-
-        chains = self._ib.reqSecDefOptParams(
-            underlyingSymbol=ticker,
-            futFopExchange="",
-            underlyingSecType="STK",
-            underlyingConId=stock.conId,
-        )
-        if not chains:
-            raise DataError(f"No option chain params for {ticker}")
-
-        chain = next((c for c in chains if c.exchange == "SMART"), chains[0])
-
-        if ibkr_exp not in chain.expirations:
-            raise DataError(f"Expiry {expiry} not available for {ticker}")
+        yf_chain = yf.Ticker(ticker).option_chain(expiry)
 
         rights = []
         if option_type.upper() in ("CALL", "ALL"):
-            rights.append("C")
+            rights.append(("C", yf_chain.calls))
         if option_type.upper() in ("PUT", "ALL"):
-            rights.append("P")
+            rights.append(("P", yf_chain.puts))
 
         rows = []
-        for strike in sorted(chain.strikes):
-            for right in rights:
+        for right, df_leg in rights:
+            for _, row in df_leg.iterrows():
+                strike = float(row["strike"])
                 rows.append({
                     "code":         self._build_code(ticker, ibkr_exp, right, strike),
                     "option_type":  "CALL" if right == "C" else "PUT",
-                    "strike_price": float(strike),
-                    "strike_time":  expiry,     # ISO, matching moomoo column name
+                    "strike_price": strike,
+                    "strike_time":  expiry,
                 })
 
         df = pd.DataFrame(rows)
@@ -260,36 +231,89 @@ class IBKRConnector:
         if not contracts:
             return pd.DataFrame()
 
-        logger.debug(f"Fetching snapshot for {len(contracts)} contracts")
-        rows = []
+        # IBKR NP: snapshot=True + genericTickList="106" → Error 321.
+        # Use yfinance for Greeks+OI. IBKR for live bid/ask only.
+        import yfinance as yf
+        import re as _re
 
+        logger.debug(f"Fetching snapshot for {len(contracts)} contracts (yfinance Greeks)")
+
+        yf_cache = {}
+        def _yf_chain(tkr, exp_iso):
+            key = (tkr, exp_iso)
+            if key not in yf_cache:
+                try:
+                    d = yf.Ticker(tkr).option_chain(exp_iso)
+                    yf_cache[key] = {
+                        "C": {round(float(r["strike"]),3): r for _,r in d.calls.iterrows()},
+                        "P": {round(float(r["strike"]),3): r for _,r in d.puts.iterrows()},
+                    }
+                except Exception as e:
+                    logger.warning(f"yfinance chain {tkr} {exp_iso}: {e}")
+                    yf_cache[key] = {"C": {}, "P": {}}
+            return yf_cache[key]
+
+        rows = []
+        spot_prices = {}   # cache per ticker to avoid repeated calls
         for code in contracts:
             try:
-                ib_contract = self._code_to_contract(code)
-                self._ib.qualifyContracts(ib_contract)
-
-                # genericTickList "106" enables impliedVol + modelGreeks
-                ticker_data = self._ib.reqMktData(
-                    ib_contract,
-                    genericTickList="106",
-                    snapshot=True,
-                    regulatorySnapshot=False,
-                )
-                self._ib.sleep(self.MKT_DATA_WAIT)
-
-                bid  = ticker_data.bid  if (ticker_data.bid  and ticker_data.bid  > 0) else 0.0
-                ask  = ticker_data.ask  if (ticker_data.ask  and ticker_data.ask  > 0) else 0.0
-                last = ticker_data.last if (ticker_data.last and ticker_data.last > 0) else 0.0
-                mid  = (bid + ask) / 2  if (bid > 0 and ask > 0) else 0.0
-
-                g     = ticker_data.modelGreeks
-                delta = float(g.delta)      if g and g.delta      is not None else 0.0
-                gamma = float(g.gamma)      if g and g.gamma      is not None else 0.0
-                theta = float(g.theta)      if g and g.theta      is not None else 0.0
-                vega  = float(g.vega)       if g and g.vega       is not None else 0.0
-                iv    = float(g.impliedVol) if g and g.impliedVol is not None else 0.0
-
                 strike, expiry_iso = self._parse_code(code)
+                m = _re.match(r"^([A-Z]+)\d{6}([CP])", code.replace("US.", ""))
+                if not m:
+                    rows.append(self._empty_snapshot_row(code)); continue
+                tkr   = m.group(1)
+                right = m.group(2)
+
+                bid, ask, last = 0.0, 0.0, 0.0
+                try:
+                    ib_c = self._code_to_contract(code)
+                    self._ib.qualifyContracts(ib_c)
+                    td = self._ib.reqMktData(ib_c, genericTickList="",
+                                             snapshot=True, regulatorySnapshot=False)
+                    self._ib.sleep(1.5)
+                    bid  = float(td.bid)  if (td.bid  and td.bid  > 0) else 0.0
+                    ask  = float(td.ask)  if (td.ask  and td.ask  > 0) else 0.0
+                    last = float(td.last) if (td.last and td.last > 0) else 0.0
+                    self._ib.cancelMktData(ib_c)
+                except Exception as ie:
+                    logger.debug(f"IBKR bid/ask {code}: {ie}")
+
+                mid = (bid + ask) / 2 if (bid > 0 and ask > 0) else last
+
+                chain  = _yf_chain(tkr, expiry_iso)
+                yf_row = chain.get(right, {}).get(round(strike, 3))
+                delta = gamma = theta = vega = iv = oi = 0.0
+                if yf_row is not None:
+                    delta = float(yf_row.get("delta", 0) or 0)
+                    gamma = float(yf_row.get("gamma", 0) or 0)
+                    theta = float(yf_row.get("theta", 0) or 0)
+                    vega  = float(yf_row.get("vega",  0) or 0)
+                    iv    = float(yf_row.get("impliedVolatility", 0) or 0)
+                    oi    = float(yf_row.get("openInterest", 0) or 0)
+                    if bid == 0 and ask == 0:
+                        bid  = float(yf_row.get("bid", 0) or 0)
+                        ask  = float(yf_row.get("ask", 0) or 0)
+                        last = float(yf_row.get("lastPrice", 0) or 0)
+                        mid  = (bid + ask) / 2 if (bid > 0 and ask > 0) else last
+
+                # yfinance doesn't return delta/gamma — compute via Black-Scholes
+                # when IV is available. Accurate for European-style options.
+                if iv > 0 and (delta == 0.0 or gamma == 0.0):
+                    try:
+                        spot_bs = spot_prices.get(tkr)
+                        if spot_bs is None:
+                            spot_bs = self.get_spot_price(f"US.{tkr}")
+                            spot_prices[tkr] = spot_bs
+                        bs = self._bs_greeks(
+                            spot=spot_bs, strike=strike,
+                            expiry_iso=expiry_iso, iv=iv, right=right,
+                        )
+                        delta = bs["delta"]
+                        gamma = bs["gamma"]
+                        if theta == 0.0: theta = bs["theta"]
+                        if vega  == 0.0: vega  = bs["vega"]
+                    except Exception as bs_e:
+                        logger.debug(f"BS Greeks failed for {code}: {bs_e}")
 
                 rows.append({
                     "code":                 code,
@@ -302,24 +326,18 @@ class IBKRConnector:
                     "option_theta":         theta,
                     "option_vega":          vega,
                     "option_iv":            iv,
-                    "option_open_interest": float(ticker_data.callOpenInterest or 0),
+                    "option_open_interest": oi,
                     "strike_price":         strike,
                     "expiry":               expiry_iso,
                     "sec_status":           "NORMAL",
                 })
-                self._ib.cancelMktData(ib_contract)
-
             except Exception as e:
-                logger.warning(f"Snapshot failed for {code}: {e}")
+                logger.warning(f"Snapshot failed {code}: {e}")
                 rows.append(self._empty_snapshot_row(code))
 
         snap = pd.DataFrame(rows)
-
         if len(snap) > 0 and (snap["option_delta"] == 0).all():
-            logger.warning(
-                "Greeks are all 0.0 — market may be closed. "
-                "Greeks populate during market hours (9:30–16:00 ET)."
-            )
+            logger.warning("Greeks all 0.0 — market closed or yfinance chain unavailable.")
         return snap
 
     # ── Streaming ─────────────────────────────────────────────────
@@ -451,13 +469,31 @@ class IBKRConnector:
         mkt = self._ib.reqMktData(contract, snapshot=True)
         self._ib.sleep(2.0)
 
-        price = mkt.last if (mkt.last and mkt.last > 0) else (
-            (mkt.bid + mkt.ask) / 2 if (mkt.bid and mkt.ask) else 0.0
-        )
+        bid   = float(mkt.bid)   if (mkt.bid   and mkt.bid   > 0) else 0.0
+        ask   = float(mkt.ask)   if (mkt.ask   and mkt.ask   > 0) else 0.0
+        last  = float(mkt.last)  if (mkt.last  and mkt.last  > 0) else 0.0
+        close = float(mkt.close) if (mkt.close and mkt.close > 0) else 0.0
         self._ib.cancelMktData(contract)
+
+        if bid > 0 and ask > 0:
+            price = (bid + ask) / 2
+        elif last > 0:
+            price = last
+        elif close > 0:
+            price = close
+        else:
+            try:
+                import yfinance as yf
+                hist  = yf.Ticker(ticker).history(period="1d")
+                price = float(hist["Close"].iloc[-1]) if not hist.empty else 0.0
+                if price > 0:
+                    logger.info(f"{symbol}: IBKR spot zero — yfinance fallback ${price:.2f}")
+            except Exception:
+                price = 0.0
 
         if price <= 0:
             raise DataError(f"Could not get spot price for {symbol}")
+        logger.debug(f"{symbol}: spot=${price:.2f} (bid={bid:.2f} ask={ask:.2f})")
         return float(price)
 
     # ── Order Execution ───────────────────────────────────────────
@@ -1064,6 +1100,69 @@ class IBKRConnector:
             f"expected MooMoo format 'US.TSLA260320C425000' "
             f"or OCC format 'TSLA260320C00425000'"
         )
+
+    @staticmethod
+    def _bs_greeks(
+        spot: float, strike: float, expiry_iso: str,
+        iv: float, right: str, r: float = 0.045,
+    ) -> dict:
+        """
+        Compute Black-Scholes Greeks for a European option.
+
+        Args:
+            spot      : Current underlying price
+            strike    : Option strike price
+            expiry_iso: Expiry date ISO format e.g. '2026-04-17'
+            iv        : Implied volatility as decimal (e.g. 0.25 = 25%)
+            right     : 'C' for call, 'P' for put
+            r         : Risk-free rate (default 4.5%)
+
+        Returns:
+            Dict with keys: delta, gamma, theta, vega
+        """
+        import math
+        from datetime import date as _date
+
+        exp_date = _date.fromisoformat(expiry_iso)
+        T = (exp_date - _date.today()).days / 365.0
+        if T <= 0:
+            T = 0.0001   # avoid division by zero on expiry day
+
+        S, K, sigma = float(spot), float(strike), float(iv)
+        if S <= 0 or K <= 0 or sigma <= 0:
+            return {"delta": 0.0, "gamma": 0.0, "theta": 0.0, "vega": 0.0}
+
+        d1 = (math.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * math.sqrt(T))
+        d2 = d1 - sigma * math.sqrt(T)
+
+        def _norm_cdf(x: float) -> float:
+            return 0.5 * (1 + math.erf(x / math.sqrt(2)))
+
+        def _norm_pdf(x: float) -> float:
+            return math.exp(-0.5 * x**2) / math.sqrt(2 * math.pi)
+
+        nd1 = _norm_cdf(d1)
+        nd2 = _norm_cdf(d2)
+        pdf_d1 = _norm_pdf(d1)
+
+        if right.upper() == "C":
+            delta = nd1
+            theta = (-(S * pdf_d1 * sigma) / (2 * math.sqrt(T))
+                     - r * K * math.exp(-r * T) * nd2) / 365
+        else:
+            delta = nd1 - 1.0
+            theta = (-(S * pdf_d1 * sigma) / (2 * math.sqrt(T))
+                     + r * K * math.exp(-r * T) * _norm_cdf(-d2)) / 365
+
+        gamma = pdf_d1 / (S * sigma * math.sqrt(T))
+        vega  = S * pdf_d1 * math.sqrt(T) / 100   # per 1% IV move
+
+        return {
+            "delta": round(delta, 6),
+            "gamma": round(gamma, 6),
+            "theta": round(theta, 6),
+            "vega":  round(vega,  6),
+        }
 
     @staticmethod
     def _empty_snapshot_row(code: str) -> Dict:

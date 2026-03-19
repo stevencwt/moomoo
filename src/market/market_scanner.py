@@ -185,17 +185,34 @@ class MarketScanner:
             days_to_earnings = (next_earnings - date.today()).days
 
         # ── Step 6: Shares Held ───────────────────────────────────
-        shares_held = self._moomoo.get_shares_held(symbol)
+        # Use config override if present (e.g. shares in MooMoo not yet
+        # transferred to IBKR). Falls back to 0 on any query failure.
+        shares_held_override = (
+            self._config.get('universe', {})
+            .get('shares_held', {})
+            .get(symbol, None)
+        )
+        if shares_held_override is not None:
+            shares_held = int(shares_held_override)
+        else:
+            try:
+                shares_held = self._moomoo.get_shares_held(symbol)
+            except Exception:
+                shares_held = 0
 
         # ── Step 7: Open Positions ────────────────────────────────
-        all_positions = self._moomoo.get_option_positions()
-        # Count positions for this symbol
+        # Falls back to 0 on any failure (e.g. MooMoo options account
+        # unavailable in live mode — IBKR is queried for real positions).
         open_positions = 0
-        if len(all_positions) > 0 and "code" in all_positions.columns:
-            ticker = symbol.replace("US.", "").replace("HK.", "")  # broker-agnostic
-            open_positions = len(
-                all_positions[all_positions["code"].str.contains(ticker, na=False)]
-            )
+        try:
+            all_positions = self._moomoo.get_option_positions()
+            if len(all_positions) > 0 and "code" in all_positions.columns:
+                ticker = symbol.replace("US.", "").replace("HK.", "")
+                open_positions = len(
+                    all_positions[all_positions["code"].str.contains(ticker, na=False)]
+                )
+        except Exception:
+            open_positions = 0
 
         # ── Assemble Snapshot ─────────────────────────────────────
         snapshot = MarketSnapshot(
@@ -278,3 +295,6 @@ class MarketScanner:
         except Exception as e:
             logger.warning(f"{symbol}: Could not fetch IV data: {e}")
             return 0.0, 50.0
+
+    def scan_symbol_intraday(self, symbol: str, morning_context: dict = None) -> list:
+        return []

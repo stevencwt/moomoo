@@ -6,7 +6,7 @@
 # Re-enable covered_call and set shares_held once TSLA transferred to IBKR.
 # ─────────────────────────────────────────────────────────────────────────────
 
-mode: live         # "paper" | "live"  — VALIDATION PASSED 10/10 trades, 90% win rate
+mode: live        # "paper" | "live"  — switch to live after simulation confirms OK
 
 # ── Broker Configuration ─────────────────────────────────────────────────────
 # ┌─────────────────────────────────────────────────────────────────────────┐
@@ -30,7 +30,7 @@ broker:
 moomoo:
   host:       "127.0.0.1"
   port:       11111
-  trade_env:  "REAL"       # "SIMULATE" = paper | "REAL" = live
+  trade_env:  "REAL"   # "SIMULATE" = paper | "REAL" = live
   stock_account_id:  "565755"       # Holds the 100 TSLA shares
   option_account_id: "4310610"      # All options orders route here
 
