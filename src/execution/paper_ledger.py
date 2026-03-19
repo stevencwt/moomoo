@@ -531,7 +531,34 @@ class PaperLedger:
                 except Exception:
                     pass
 
-    def _get_conn(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self._db_path)
-        conn.execute("PRAGMA journal_mode=WAL")
-        return conn
+    def _get_conn(self):
+        """
+        Context manager that opens, yields, and CLOSES a SQLite connection.
+        Guarantees the file descriptor is released on every call, preventing
+        OS fd exhaustion after long bot runtimes.
+
+        Usage (unchanged from caller side):
+            with self._get_conn() as conn:
+                conn.execute(...)
+        """
+        from contextlib import contextmanager
+
+        @contextmanager
+        def _cm():
+            conn = sqlite3.connect(
+                self._db_path,
+                timeout=30,
+                check_same_thread=False,
+            )
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA synchronous=NORMAL")
+            try:
+                yield conn
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+            finally:
+                conn.close()   # always release the file descriptor
+
+        return _cm()
