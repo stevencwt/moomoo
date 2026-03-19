@@ -665,3 +665,432 @@
 2026-03-18 23:10:25 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
 2026-03-18 23:10:25 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
 2026-03-18 23:10:25 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-18 23:38:55 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.AMZN: direction=LONG_ONLY (src=llm) HTF=WEAK_UPTREND LTF=RANGING
+2026-03-18 23:38:55 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.NVDA: direction=LONG_ONLY (src=drift) HTF=RANGING LTF=RANGING
+2026-03-18 23:38:55 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.MSFT: direction=SHORT_ONLY (src=llm) HTF=WEAK_DOWNTREND LTF=STRONG_DOWNTREND
+2026-03-18 23:38:55 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.QQQ: direction=WAIT (src=llm) HTF=DOWNTREND LTF=TRANSITION
+2026-03-18 23:38:55 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-18 23:38:56 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-18 23:38:56 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.SPY: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-18 23:38:56 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.QQQ: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-18 23:38:56 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AAPL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-18 23:38:56 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.MSFT: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-18 23:38:56 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AMZN: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-18 23:38:56 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.GOOGL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-18 23:38:56 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.NVDA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-18 23:38:56 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.TSLA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-18 23:38:56 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-19 00:08:59 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-19 00:08:59 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-19 00:08:59 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.SPY: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 00:08:59 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.QQQ: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 00:08:59 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AAPL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 00:08:59 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.MSFT: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 00:08:59 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AMZN: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 00:08:59 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.GOOGL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 00:08:59 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.NVDA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 00:08:59 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.TSLA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 00:08:59 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-19 00:09:07 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] LTF: STRONG_UPTREND conf=4 dir=LONG_ONLY (10873ms) → combined: LONG_ONLY
+2026-03-19 00:09:08 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (11411ms) → combined: SHORT_ONLY
+2026-03-19 00:09:09 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (10490ms) → combined: SHORT_ONLY
+2026-03-19 00:09:10 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] LTF: STRONG_DOWNTREND conf=5 dir=SHORT_ONLY (10887ms) → combined: SHORT_ONLY
+2026-03-19 00:09:10 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] LTF: RANGING conf=4 dir=BOTH (11893ms) → combined: SHORT_ONLY
+2026-03-19 00:09:11 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] LTF: RANGING conf=4 dir=BOTH (11547ms) → combined: BOTH
+2026-03-19 00:09:11 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] LTF: WEAK_DOWNTREND conf=3 dir=SHORT_ONLY (13245ms) → combined: SHORT_ONLY
+2026-03-19 00:09:11 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] LTF: TRANSITION conf=3 dir=NO_TRADE (12399ms) → combined: WAIT
+2026-03-19 00:39:00 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.AMZN: direction=WAIT (src=llm) HTF=WEAK_UPTREND LTF=TRANSITION
+2026-03-19 00:39:00 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.NVDA: direction=LONG_ONLY (src=drift) HTF=RANGING LTF=RANGING
+2026-03-19 00:39:00 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.MSFT: direction=SHORT_ONLY (src=llm) HTF=WEAK_DOWNTREND LTF=STRONG_DOWNTREND
+2026-03-19 00:39:00 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.QQQ: direction=SHORT_ONLY (src=llm) HTF=DOWNTREND LTF=WEAK_DOWNTREND
+2026-03-19 00:39:00 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-19 00:39:00 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-19 00:39:00 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.SPY: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 00:39:00 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.QQQ: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 00:39:00 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AAPL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 00:39:00 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.MSFT: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 00:39:00 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AMZN: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 00:39:00 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.GOOGL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 00:39:00 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.NVDA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 00:39:00 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.TSLA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 00:39:00 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-19 01:09:03 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-19 01:09:04 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-19 01:09:04 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.SPY: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 01:09:04 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.QQQ: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 01:09:04 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AAPL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 01:09:04 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.MSFT: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 01:09:04 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AMZN: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 01:09:04 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.GOOGL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 01:09:04 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.NVDA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 01:09:04 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.TSLA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 01:09:04 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-19 01:09:11 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] HTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (10112ms)
+2026-03-19 01:09:12 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (9183ms)
+2026-03-19 01:09:12 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] LTF: STRONG_DOWNTREND conf=5 dir=SHORT_ONLY (9541ms) → combined: SHORT_ONLY
+2026-03-19 01:09:13 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] LTF: STRONG_UPTREND conf=4 dir=LONG_ONLY (12144ms) → combined: LONG_ONLY
+2026-03-19 01:09:13 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (10939ms) → combined: SHORT_ONLY
+2026-03-19 01:09:13 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] LTF: RANGING conf=4 dir=BOTH (10816ms) → combined: SHORT_ONLY
+2026-03-19 01:09:14 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] HTF: RANGING conf=4 dir=BOTH (10732ms)
+2026-03-19 01:09:16 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] LTF: RANGING conf=3 dir=BOTH (13048ms) → combined: LONG_ONLY
+2026-03-19 01:09:17 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] LTF: RANGING conf=4 dir=BOTH (13748ms) → combined: BOTH
+2026-03-19 01:09:18 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (16088ms) → combined: SHORT_ONLY
+2026-03-19 01:09:19 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] LTF: WEAK_DOWNTREND conf=3 dir=SHORT_ONLY (17461ms) → combined: SHORT_ONLY
+2026-03-19 01:39:05 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.AMZN: direction=LONG_ONLY (src=llm) HTF=WEAK_UPTREND LTF=RANGING
+2026-03-19 01:39:05 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.NVDA: direction=LONG_ONLY (src=drift) HTF=RANGING LTF=RANGING
+2026-03-19 01:39:05 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.MSFT: direction=SHORT_ONLY (src=llm) HTF=WEAK_DOWNTREND LTF=STRONG_DOWNTREND
+2026-03-19 01:39:05 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.QQQ: direction=SHORT_ONLY (src=llm) HTF=DOWNTREND LTF=WEAK_DOWNTREND
+2026-03-19 01:39:05 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-19 01:39:05 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-19 01:39:05 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.SPY: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 01:39:05 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.QQQ: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 01:39:05 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AAPL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 01:39:05 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.MSFT: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 01:39:05 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AMZN: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 01:39:05 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.GOOGL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 01:39:05 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.NVDA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 01:39:05 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.TSLA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 01:39:05 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-19 01:39:13 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (8569ms)
+2026-03-19 01:39:14 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (9607ms)
+2026-03-19 01:39:14 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] HTF: WEAK_DOWNTREND conf=4 dir=SHORT_ONLY (9891ms)
+2026-03-19 01:39:19 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] HTF: RANGING conf=4 dir=BOTH (14123ms)
+2026-03-19 01:39:19 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] HTF: RANGING conf=4 dir=BOTH (14494ms)
+2026-03-19 02:09:08 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-19 02:09:08 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-19 02:09:08 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.SPY: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 02:09:08 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.QQQ: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 02:09:08 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AAPL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 02:09:08 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.MSFT: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 02:09:08 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AMZN: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 02:09:08 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.GOOGL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 02:09:08 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.NVDA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 02:09:08 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.TSLA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 02:09:08 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-19 02:09:16 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] LTF: RANGING conf=4 dir=BOTH (8849ms) → combined: SHORT_ONLY
+2026-03-19 02:09:16 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] LTF: STRONG_UPTREND conf=4 dir=LONG_ONLY (10564ms) → combined: LONG_ONLY
+2026-03-19 02:09:19 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] LTF: RANGING conf=4 dir=BOTH (10885ms) → combined: BOTH
+2026-03-19 02:09:19 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] LTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (11956ms) → combined: SHORT_ONLY
+2026-03-19 02:09:20 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (13337ms) → combined: SHORT_ONLY
+2026-03-19 02:09:20 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (14204ms) → combined: SHORT_ONLY
+2026-03-19 02:09:22 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (16022ms) → combined: SHORT_ONLY
+2026-03-19 02:09:23 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] LTF: RANGING conf=4 dir=BOTH (15918ms) → combined: BOTH
+2026-03-19 02:39:09 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.AMZN: direction=BOTH (src=none) HTF=RANGING LTF=RANGING
+2026-03-19 02:39:09 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.NVDA: direction=LONG_ONLY (src=drift) HTF=RANGING LTF=RANGING
+2026-03-19 02:39:09 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.MSFT: direction=SHORT_ONLY (src=llm) HTF=WEAK_DOWNTREND LTF=STRONG_DOWNTREND
+2026-03-19 02:39:09 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.QQQ: direction=SHORT_ONLY (src=llm) HTF=DOWNTREND LTF=DOWNTREND
+2026-03-19 02:39:09 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-19 02:39:09 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 4 position(s) held
+2026-03-19 02:39:09 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.SPY: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 02:39:09 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.QQQ: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 02:39:09 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AAPL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 02:39:09 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.MSFT: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 02:39:09 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AMZN: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 02:39:09 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.GOOGL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 02:39:09 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.NVDA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 02:39:09 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.TSLA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 02:39:09 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 0 exits
+2026-03-19 03:09:17 | INFO     | options_bot.monitoring.exit_evaluator | Trade #10: TAKE PROFIT | current=$1.88 <= target=$1.88 | P&L=$+188 (50%) | DTE=29
+2026-03-19 03:09:20 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 4 open position(s)
+2026-03-19 03:09:20 | INFO     | options_bot.monitoring.exit_evaluator | Trade #10: TAKE PROFIT | current=$1.88 <= target=$1.88 | P&L=$+188 (50%) | DTE=29
+2026-03-19 03:09:20 | INFO     | options_bot.execution.paper_ledger | [PAPER] Closed #10: reason=take_profit | P&L=$+187.50 (net=$+187.50) | days=7 | dte_rem=29 | captured=50.0% | buf_close=None% | spot_chg=None%
+2026-03-19 03:09:20 | INFO     | options_bot.execution.portfolio_guard | Position closed: US.QQQ bear_call_spread | remaining=3
+2026-03-19 03:09:20 | INFO     | options_bot.execution.trade_manager | Trade #10 closed | ✅ profit | P&L=$+187.50 | reason=take_profit
+2026-03-19 03:09:20 | INFO     | options_bot.monitoring.position_monitor | EXIT: #10 US.QQQ bear_call_spread | reason=take_profit | P&L=$+187.50 | urgency=end_of_day
+2026-03-19 03:09:20 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: 1 exit(s) triggered | still open: 3
+2026-03-19 03:09:20 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.SPY: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 03:09:20 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.QQQ: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 03:09:20 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AAPL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 03:09:20 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.MSFT: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 03:09:20 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AMZN: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 03:09:20 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.GOOGL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 03:09:20 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.NVDA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 03:09:20 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.TSLA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 03:09:20 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 4 open | 1 exits
+2026-03-19 03:09:26 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] HTF: RANGING conf=4 dir=BOTH (5909ms)
+2026-03-19 03:09:27 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (9267ms) → combined: SHORT_ONLY
+2026-03-19 03:09:29 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (10458ms) → combined: SHORT_ONLY
+2026-03-19 03:09:30 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] LTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (10958ms) → combined: SHORT_ONLY
+2026-03-19 03:09:30 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (12132ms)
+2026-03-19 03:09:30 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] LTF: WEAK_DOWNTREND conf=3 dir=SHORT_ONLY (11515ms) → combined: SHORT_ONLY
+2026-03-19 03:09:30 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] LTF: STRONG_UPTREND conf=4 dir=LONG_ONLY (13147ms) → combined: LONG_ONLY
+2026-03-19 03:09:31 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] HTF: WEAK_DOWNTREND conf=4 dir=SHORT_ONLY (12555ms)
+2026-03-19 03:09:31 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (13485ms) → combined: SHORT_ONLY
+2026-03-19 03:09:34 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] LTF: RANGING conf=4 dir=BOTH (14035ms) → combined: BOTH
+2026-03-19 03:09:35 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (15916ms) → combined: SHORT_ONLY
+2026-03-19 03:42:31 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.AMZN: direction=SHORT_ONLY (src=llm) HTF=RANGING LTF=DOWNTREND
+2026-03-19 03:42:31 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.NVDA: direction=LONG_ONLY (src=drift) HTF=RANGING LTF=RANGING
+2026-03-19 03:42:31 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.MSFT: direction=SHORT_ONLY (src=llm) HTF=WEAK_DOWNTREND LTF=STRONG_DOWNTREND
+2026-03-19 03:42:31 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 3 open position(s)
+2026-03-19 03:42:31 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 3 position(s) held
+2026-03-19 03:42:31 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.SPY: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 03:42:31 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.QQQ: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 03:42:31 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AAPL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 03:42:31 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.MSFT: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 03:42:31 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AMZN: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 03:42:31 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.GOOGL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 03:42:31 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.NVDA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 03:42:31 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.TSLA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 03:42:31 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 03:42:38 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] LTF: UPTREND conf=4 dir=LONG_ONLY (8854ms) → combined: LONG_ONLY
+2026-03-19 03:42:40 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (9926ms)
+2026-03-19 03:42:40 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] HTF: RANGING conf=4 dir=BOTH (10697ms)
+2026-03-19 03:42:41 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] LTF: STRONG_DOWNTREND conf=5 dir=SHORT_ONLY (11354ms) → combined: SHORT_ONLY
+2026-03-19 03:42:42 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] HTF: RANGING conf=4 dir=BOTH (11146ms)
+2026-03-19 03:42:43 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (12636ms) → combined: SHORT_ONLY
+2026-03-19 03:42:43 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (13090ms)
+2026-03-19 03:42:43 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] LTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (13508ms) → combined: SHORT_ONLY
+2026-03-19 03:42:44 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] LTF: STRONG_DOWNTREND conf=5 dir=SHORT_ONLY (13308ms) → combined: SHORT_ONLY
+2026-03-19 03:42:45 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] HTF: WEAK_DOWNTREND conf=3 dir=SHORT_ONLY (13721ms)
+2026-03-19 03:42:45 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] LTF: TRANSITION conf=4 dir=NO_TRADE (13524ms) → combined: BOTH
+2026-03-19 03:42:46 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (15124ms) → combined: SHORT_ONLY
+2026-03-19 03:42:47 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (16373ms) → combined: SHORT_ONLY
+2026-03-19 04:05:02 | INFO     | options_bot.scheduler.bot_scheduler | [IV JOB] Collecting end-of-day IV...
+2026-03-19 04:05:02 | INFO     | options_bot.scheduler.bot_scheduler | [IV JOB] US.SPY: ATM IV=20.7%
+2026-03-19 04:05:02 | INFO     | options_bot.scheduler.bot_scheduler | [IV JOB] US.QQQ: ATM IV=32.4%
+2026-03-19 04:05:03 | INFO     | options_bot.scheduler.bot_scheduler | [IV JOB] US.AAPL: ATM IV=31.8%
+2026-03-19 04:05:03 | INFO     | options_bot.scheduler.bot_scheduler | [IV JOB] US.MSFT: ATM IV=31.0%
+2026-03-19 04:05:03 | INFO     | options_bot.scheduler.bot_scheduler | [IV JOB] US.AMZN: ATM IV=38.0%
+2026-03-19 04:05:03 | INFO     | options_bot.scheduler.bot_scheduler | [IV JOB] US.GOOGL: ATM IV=32.3%
+2026-03-19 04:05:03 | INFO     | options_bot.scheduler.bot_scheduler | [IV JOB] US.NVDA: ATM IV=41.5%
+2026-03-19 04:05:04 | INFO     | options_bot.scheduler.bot_scheduler | [IV JOB] US.TSLA: ATM IV=44.7%
+2026-03-19 04:12:34 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 04:42:34 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 05:12:35 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 05:42:35 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 06:12:36 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 06:42:36 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 07:12:37 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 07:42:37 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 08:12:38 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 11:59:09 | INFO     | options_bot.scheduler.bot_scheduler | Shutdown signal received (2) — stopping...
+2026-03-19 11:59:09 | INFO     | options_bot.scheduler.bot_scheduler | Scheduler stopping...
+2026-03-19 11:59:09 | INFO     | options_bot.connectors.moomoo  | Quote context closed
+2026-03-19 11:59:09 | INFO     | options_bot.connectors.moomoo  | Trade context closed
+2026-03-19 11:59:09 | INFO     | options_bot.connectors.ibkr    | Disconnected from IBKR
+2026-03-19 11:59:09 | INFO     | options_bot.scheduler.bot_scheduler | Scheduler stopped
+2026-03-19 11:59:20 | INFO     | options_bot                    | Logger initialised | level=INFO | file=logs/bot.log
+2026-03-19 11:59:20 | INFO     | options_bot.scheduler.bot_scheduler | Building BotScheduler | mode=paper | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-19 11:59:20 | INFO     | options_bot.connectors.broker_factory | Building connectors | data=moomoo | execution=ibkr
+2026-03-19 11:59:20 | INFO     | options_bot.connectors.moomoo  | MooMooConnector initialised | host=127.0.0.1:11111 | trade_env=SIMULATE | mode=paper
+2026-03-19 11:59:20 | INFO     | options_bot.connectors.ibkr    | IBKRConnector initialised | host=127.0.0.1:7496 | client_id=1 | mode=paper
+2026-03-19 11:59:20 | INFO     | options_bot.scheduler.bot_scheduler | Connectors | data=moomoo | execution=ibkr | shared=no
+2026-03-19 11:59:20 | INFO     | options_bot.connectors.yfinance | YFinanceConnector initialised
+2026-03-19 11:59:20 | INFO     | options_bot.market.iv_rank_calculator | IVRankCalculator initialised | db=data/iv_history.db
+2026-03-19 11:59:20 | INFO     | options_bot.market.regime_detector | RegimeDetector | high_vol_vix=25.0 | bull_rsi>=55.0 | bear_rsi<=45.0
+2026-03-19 11:59:20 | INFO     | options_bot.market.options_analyser | OptionsAnalyser | DTE=21-45 | delta=0.2-0.35 | earnings_buffer=7d
+2026-03-19 11:59:20 | INFO     | options_bot.market.market_scanner | MarketScanner initialised | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-19 11:59:20 | INFO     | options_bot.strategies.registry | StrategyRegistry initialised
+2026-03-19 11:59:20 | INFO     | options_bot.strategies.covered_call | Strategy 'covered_call' initialised | enabled=True
+2026-03-19 11:59:20 | INFO     | options_bot.strategies.registry | Registered strategy 'covered_call' | enabled=True | total=1
+2026-03-19 11:59:20 | INFO     | options_bot.strategies.bear_call_spread | Strategy 'bear_call_spread' initialised | enabled=True
+2026-03-19 11:59:20 | INFO     | options_bot.strategies.registry | Registered strategy 'bear_call_spread' | enabled=True | total=2
+2026-03-19 11:59:20 | INFO     | options_bot.strategies.bull_put_spread | Strategy 'bull_put_spread' initialised | enabled=True
+2026-03-19 11:59:20 | INFO     | options_bot.strategies.registry | Registered strategy 'bull_put_spread' | enabled=True | total=3
+2026-03-19 11:59:20 | INFO     | options_bot.execution.portfolio_guard | PortfolioGuard initialised | max_positions=8 | max_risk_pct=5% | max_total_risk_pct=20% | max_trades/day=3 | portfolio=$100,000
+2026-03-19 11:59:20 | INFO     | options_bot.execution.order_router | OrderRouter initialised | mode=paper | fill_timeout=60s
+2026-03-19 11:59:20 | INFO     | options_bot.execution.paper_ledger | PaperLedger initialised | db=data/paper_trades.db
+2026-03-19 11:59:20 | INFO     | options_bot.execution.portfolio_guard | PortfolioGuard restored 3 open position(s) from ledger | trades today=0 (incl. closed/stopped)
+2026-03-19 11:59:20 | INFO     | options_bot.execution.signal_ranker | SignalRanker initialised | enabled=True | weights: iv_rank=0.4 buffer=0.35 rr=0.25
+2026-03-19 11:59:20 | INFO     | options_bot.execution.trade_manager | TradeManager initialised | mode=paper | ranker_enabled=True
+2026-03-19 11:59:20 | INFO     | options_bot.monitoring.exit_evaluator | ExitEvaluator | stop_loss=3.0×credit | min_hold=5d | take_profit=50% | dte_close=21d
+2026-03-19 11:59:20 | INFO     | options_bot.monitoring.position_monitor | PositionMonitor initialised
+2026-03-19 11:59:20 | INFO     | options_bot.monitoring.validation_reporter | ValidationReporter | min_trades=10 | min_win_rate=60% | min_sharpe=0.5
+2026-03-19 11:59:20 | INFO     | options_bot.scheduler.bot_scheduler | All components built successfully
+2026-03-19 11:59:20 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-19 11:59:20 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-19 11:59:20 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-19 11:59:20 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-19 11:59:20 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-19 11:59:20 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-19 11:59:20 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-19 11:59:20 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] initialized | provider=gemini | HTF=100d every 2h | LTF=120×1h w60 every 30min
+2026-03-19 11:59:20 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridgePool] 8 symbols | provider=gemini | HTF=2h LTF=30min
+2026-03-19 11:59:20 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] pool initialized | 8 symbols | provider=gemini | HTF=2h LTF=30min
+2026-03-19 11:59:20 | INFO     | options_bot.scheduler.bot_scheduler | BotScheduler initialised | mode=paper | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-19 11:59:20 | INFO     | options_bot.main               | Starting Options Bot | mode=paper | watchlist=['US.SPY', 'US.QQQ', 'US.AAPL', 'US.MSFT', 'US.AMZN', 'US.GOOGL', 'US.NVDA', 'US.TSLA']
+2026-03-19 11:59:20 | INFO     | options_bot.connectors.moomoo  | Connecting to OpenD...
+2026-03-19 11:59:20 | INFO     | options_bot.connectors.moomoo  | Quote context opened
+2026-03-19 11:59:20 | INFO     | options_bot.connectors.moomoo  | Trade context opened
+2026-03-19 11:59:20 | INFO     | options_bot.connectors.moomoo  | ✅ Connected to OpenD successfully
+2026-03-19 11:59:20 | INFO     | options_bot.connectors.ibkr    | Connecting to IBKR at 127.0.0.1:7496...
+2026-03-19 11:59:21 | INFO     | options_bot.connectors.ibkr    | ✅ Connected to IBKR | account=U18705798
+2026-03-19 11:59:21 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 3 open position(s)
+2026-03-19 11:59:21 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 3 position(s) held
+2026-03-19 11:59:21 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 11:59:21 | INFO     | options_bot.scheduler.bot_scheduler | Schedule time conversion: 09:35 ET → 21:35 local (system timezone: +08)
+2026-03-19 11:59:21 | INFO     | options_bot.scheduler.bot_scheduler | Schedule time conversion: 16:05 ET → 04:05 local (system timezone: +08)
+2026-03-19 11:59:21 | INFO     | options_bot.scheduler.bot_scheduler | Schedule time conversion: 16:30 ET → 04:30 local (system timezone: +08)
+2026-03-19 12:29:37 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 13:10:48 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 13:44:01 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 14:14:14 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 14:44:42 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 15:15:11 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 15:45:11 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 16:15:11 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 16:45:12 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 17:15:12 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 17:52:44 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 18:23:08 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 18:54:11 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 19:25:19 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 19:55:24 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 20:26:33 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 20:59:14 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 0 exits
+2026-03-19 21:31:14 | INFO     | options_bot.monitoring.exit_evaluator | Trade #11: TAKE PROFIT | current=$1.11 <= target=$1.18 | P&L=$+125 (53%) | DTE=29
+2026-03-19 21:31:18 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 3 open position(s)
+2026-03-19 21:31:18 | INFO     | options_bot.monitoring.exit_evaluator | Trade #11: TAKE PROFIT | current=$1.11 <= target=$1.18 | P&L=$+125 (53%) | DTE=29
+2026-03-19 21:31:18 | INFO     | options_bot.execution.paper_ledger | [PAPER] Closed #11: reason=take_profit | P&L=$+124.50 (net=$+124.50) | days=3 | dte_rem=29 | captured=52.8% | buf_close=None% | spot_chg=None%
+2026-03-19 21:31:18 | INFO     | options_bot.execution.portfolio_guard | Position closed: US.NVDA bear_call_spread | remaining=2
+2026-03-19 21:31:18 | INFO     | options_bot.execution.trade_manager | Trade #11 closed | ✅ profit | P&L=$+124.50 | reason=take_profit
+2026-03-19 21:31:18 | INFO     | options_bot.monitoring.position_monitor | EXIT: #11 US.NVDA bear_call_spread | reason=take_profit | P&L=$+124.50 | urgency=end_of_day
+2026-03-19 21:31:18 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: 1 exit(s) triggered | still open: 2
+2026-03-19 21:31:18 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 3 open | 1 exits
+2026-03-19 21:31:26 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] HTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (10459ms)
+2026-03-19 21:31:27 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (10501ms)
+2026-03-19 21:31:27 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] LTF: STRONG_DOWNTREND conf=5 dir=SHORT_ONLY (12398ms) → combined: SHORT_ONLY
+2026-03-19 21:31:28 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (10913ms)
+2026-03-19 21:31:28 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] HTF: RANGING conf=4 dir=BOTH (11897ms)
+2026-03-19 21:31:28 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] HTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (10841ms)
+2026-03-19 21:31:29 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] LTF: STRONG_DOWNTREND conf=5 dir=SHORT_ONLY (13399ms) → combined: SHORT_ONLY
+2026-03-19 21:31:29 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] HTF: STRONG_DOWNTREND conf=5 dir=SHORT_ONLY (11338ms)
+2026-03-19 21:31:30 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] LTF: TRANSITION conf=3 dir=NO_TRADE (13951ms) → combined: BOTH
+2026-03-19 21:31:30 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (15435ms)
+2026-03-19 21:31:31 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] LTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (13930ms) → combined: SHORT_ONLY
+2026-03-19 21:31:32 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (15937ms) → combined: SHORT_ONLY
+2026-03-19 21:31:33 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (16107ms) → combined: SHORT_ONLY
+2026-03-19 21:31:33 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] HTF: WEAK_DOWNTREND conf=3 dir=SHORT_ONLY (16253ms)
+2026-03-19 21:31:33 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] LTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (15697ms) → combined: SHORT_ONLY
+2026-03-19 21:31:39 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] LTF: STRONG_DOWNTREND conf=5 dir=SHORT_ONLY (22228ms) → combined: SHORT_ONLY
+2026-03-19 21:35:18 | INFO     | options_bot.scheduler.bot_scheduler | [SCAN JOB] Starting | 09:35 ET
+2026-03-19 21:35:18 | INFO     | options_bot.market.market_scanner | Scanning 8 symbols...
+2026-03-19 21:35:26 | INFO     | options_bot.market.regime_bridge | [RegimeBridge] US.SPY bootstrap: 502 bars | consensus=CHOP_NEUTRAL | recommended=OPTIONS_INCOME | vol=MODERATE | conf=0.59
+2026-03-19 21:35:26 | WARNING  | options_bot.market.iv_rank_calculator | US.SPY: Only 15 days of IV history stored. Using bootstrap estimate: 68.4 (needs 30+ days for reliability)
+2026-03-19 21:35:26 | WARNING  | options_bot.market.market_scanner | US.SPY: IV Rank quality is 'unavailable'. Store daily IV for 30+ days for reliable signals.
+2026-03-19 21:35:26 | INFO     | options_bot.market.market_scanner | ✅ US.SPY | price=655.73 | regime=high_vol [src=v2] | IV_rank=68 | %B=-0.03 | RSI=33 | v2=CHOP_NEUTRAL/conf=0.59
+2026-03-19 21:35:39 | INFO     | options_bot.market.regime_bridge | [RegimeBridge] US.QQQ bootstrap: 502 bars | consensus=CHOP_NEUTRAL | recommended=OPTIONS_INCOME | vol=MODERATE | conf=0.71
+2026-03-19 21:35:40 | WARNING  | options_bot.market.iv_rank_calculator | US.QQQ: Only 15 days of IV history stored. Using bootstrap estimate: 68.4 (needs 30+ days for reliability)
+2026-03-19 21:35:40 | WARNING  | options_bot.market.market_scanner | US.QQQ: IV Rank quality is 'unavailable'. Store daily IV for 30+ days for reliable signals.
+2026-03-19 21:35:40 | INFO     | options_bot.market.market_scanner | ✅ US.QQQ | price=587.39 | regime=high_vol [src=v2] | IV_rank=68 | %B=-0.11 | RSI=38 | v2=CHOP_NEUTRAL/conf=0.71
+2026-03-19 21:35:51 | INFO     | options_bot.market.regime_bridge | [RegimeBridge] US.AAPL bootstrap: 502 bars | consensus=BULL_PERSISTENT | recommended=OPTIONS_INCOME | vol=MODERATE | conf=0.71
+2026-03-19 21:35:51 | WARNING  | options_bot.market.iv_rank_calculator | US.AAPL: Only 15 days of IV history stored. Using bootstrap estimate: 68.4 (needs 30+ days for reliability)
+2026-03-19 21:35:51 | WARNING  | options_bot.market.market_scanner | US.AAPL: IV Rank quality is 'unavailable'. Store daily IV for 30+ days for reliable signals.
+2026-03-19 21:35:51 | INFO     | options_bot.market.market_scanner | ✅ US.AAPL | price=248.96 | regime=high_vol [src=v2] | IV_rank=68 | %B=0.09 | RSI=36 | v2=BULL_PERSISTENT/conf=0.71
+2026-03-19 21:36:06 | INFO     | options_bot.market.regime_bridge | [RegimeBridge] US.MSFT bootstrap: 502 bars | consensus=BEAR_PERSISTENT | recommended=OPTIONS_INCOME | vol=MODERATE | conf=0.63
+2026-03-19 21:36:06 | WARNING  | options_bot.market.iv_rank_calculator | US.MSFT: Only 15 days of IV history stored. Using bootstrap estimate: 68.4 (needs 30+ days for reliability)
+2026-03-19 21:36:06 | WARNING  | options_bot.market.market_scanner | US.MSFT: IV Rank quality is 'unavailable'. Store daily IV for 30+ days for reliable signals.
+2026-03-19 21:36:07 | INFO     | options_bot.market.market_scanner | ✅ US.MSFT | price=389.82 | regime=high_vol [src=v2] | IV_rank=68 | %B=0.16 | RSI=37 | v2=BEAR_PERSISTENT/conf=0.63
+2026-03-19 21:36:23 | INFO     | options_bot.market.regime_bridge | [RegimeBridge] US.AMZN bootstrap: 502 bars | consensus=CHOP_NEUTRAL | recommended=OPTIONS_INCOME | vol=MODERATE | conf=0.67
+2026-03-19 21:36:24 | WARNING  | options_bot.market.iv_rank_calculator | US.AMZN: Only 15 days of IV history stored. Using bootstrap estimate: 68.4 (needs 30+ days for reliability)
+2026-03-19 21:36:24 | WARNING  | options_bot.market.market_scanner | US.AMZN: IV Rank quality is 'unavailable'. Store daily IV for 30+ days for reliable signals.
+2026-03-19 21:36:24 | INFO     | options_bot.market.market_scanner | ✅ US.AMZN | price=206.16 | regime=high_vol [src=v2] | IV_rank=68 | %B=0.15 | RSI=42 | v2=CHOP_NEUTRAL/conf=0.67
+2026-03-19 21:36:43 | INFO     | options_bot.market.regime_bridge | [RegimeBridge] US.GOOGL bootstrap: 502 bars | consensus=CHOP_NEUTRAL | recommended=OPTIONS_INCOME | vol=MODERATE | conf=0.45
+2026-03-19 21:36:44 | WARNING  | options_bot.market.iv_rank_calculator | US.GOOGL: Only 15 days of IV history stored. Using bootstrap estimate: 68.4 (needs 30+ days for reliability)
+2026-03-19 21:36:44 | WARNING  | options_bot.market.market_scanner | US.GOOGL: IV Rank quality is 'unavailable'. Store daily IV for 30+ days for reliable signals.
+2026-03-19 21:36:44 | INFO     | options_bot.market.market_scanner | ✅ US.GOOGL | price=302.94 | regime=high_vol [src=v2] | IV_rank=68 | %B=0.28 | RSI=43 | v2=CHOP_NEUTRAL/conf=0.45
+2026-03-19 21:37:03 | INFO     | options_bot.market.regime_bridge | [RegimeBridge] US.NVDA bootstrap: 502 bars | consensus=CHOP_NEUTRAL | recommended=OPTIONS_INCOME | vol=MODERATE | conf=0.49
+2026-03-19 21:37:03 | WARNING  | options_bot.market.iv_rank_calculator | US.NVDA: Only 15 days of IV history stored. Using bootstrap estimate: 68.4 (needs 30+ days for reliability)
+2026-03-19 21:37:03 | WARNING  | options_bot.market.market_scanner | US.NVDA: IV Rank quality is 'unavailable'. Store daily IV for 30+ days for reliable signals.
+2026-03-19 21:37:04 | INFO     | options_bot.market.market_scanner | ✅ US.NVDA | price=176.08 | regime=high_vol [src=v2] | IV_rank=68 | %B=0.11 | RSI=41 | v2=CHOP_NEUTRAL/conf=0.49
+2026-03-19 21:37:29 | INFO     | options_bot.market.regime_bridge | [RegimeBridge] US.TSLA bootstrap: 502 bars | consensus=BEAR_PERSISTENT | recommended=OPTIONS_INCOME | vol=MODERATE | conf=0.74
+2026-03-19 21:37:29 | WARNING  | options_bot.market.iv_rank_calculator | US.TSLA: Only 16 days of IV history stored. Using bootstrap estimate: 68.4 (needs 30+ days for reliability)
+2026-03-19 21:37:29 | WARNING  | options_bot.market.market_scanner | US.TSLA: IV Rank quality is 'unavailable'. Store daily IV for 30+ days for reliable signals.
+2026-03-19 21:37:30 | INFO     | options_bot.market.market_scanner | ✅ US.TSLA | price=380.65 | regime=high_vol [src=v2] | IV_rank=68 | %B=-0.11 | RSI=37 | v2=BEAR_PERSISTENT/conf=0.74
+2026-03-19 21:37:30 | INFO     | options_bot.market.market_scanner | Scan complete: 8/8 symbols
+2026-03-19 21:37:30 | INFO     | options_bot.strategies.registry | Universe evaluation complete: 8 symbols → 0 total signals
+2026-03-19 21:37:30 | INFO     | options_bot.scheduler.bot_scheduler | [SCAN JOB] Complete in 131.5s | 8 symbols | 0 signals
+2026-03-19 22:01:23 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.AMZN: direction=SHORT_ONLY (src=llm) HTF=DOWNTREND LTF=DOWNTREND
+2026-03-19 22:01:23 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.MSFT: direction=SHORT_ONLY (src=llm) HTF=DOWNTREND LTF=STRONG_DOWNTREND
+2026-03-19 22:01:23 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 2 open position(s)
+2026-03-19 22:01:24 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 2 position(s) held
+2026-03-19 22:01:24 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.SPY: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 22:01:24 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.QQQ: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 22:01:24 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AAPL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 22:01:24 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.MSFT: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 22:01:24 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AMZN: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 22:01:24 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.GOOGL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 22:01:24 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.NVDA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 22:01:24 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.TSLA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 22:01:24 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 2 open | 0 exits
+2026-03-19 22:31:53 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 2 open position(s)
+2026-03-19 22:31:53 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 2 position(s) held
+2026-03-19 22:31:53 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.SPY: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 22:31:53 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.QQQ: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 22:31:53 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AAPL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 22:31:53 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.MSFT: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 22:31:53 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AMZN: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 22:31:53 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.GOOGL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 22:31:53 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.NVDA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 22:31:53 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.TSLA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 22:31:53 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 2 open | 0 exits
+2026-03-19 22:32:01 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] LTF: TRANSITION conf=4 dir=NO_TRADE (10125ms) → combined: BOTH
+2026-03-19 22:32:02 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] LTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (9762ms) → combined: SHORT_ONLY
+2026-03-19 22:32:02 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] LTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (10956ms) → combined: SHORT_ONLY
+2026-03-19 22:32:02 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] LTF: STRONG_DOWNTREND conf=5 dir=SHORT_ONLY (11482ms) → combined: SHORT_ONLY
+2026-03-19 22:32:04 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] LTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (12026ms) → combined: SHORT_ONLY
+2026-03-19 22:32:04 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] LTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (11891ms) → combined: SHORT_ONLY
+2026-03-19 22:32:07 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] LTF: STRONG_DOWNTREND conf=5 dir=SHORT_ONLY (13975ms) → combined: SHORT_ONLY
+2026-03-19 22:32:07 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (15971ms) → combined: SHORT_ONLY
+2026-03-19 23:02:21 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.AMZN: direction=SHORT_ONLY (src=llm) HTF=DOWNTREND LTF=DOWNTREND
+2026-03-19 23:02:21 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.MSFT: direction=SHORT_ONLY (src=llm) HTF=DOWNTREND LTF=STRONG_DOWNTREND
+2026-03-19 23:02:21 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 2 open position(s)
+2026-03-19 23:02:21 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 2 position(s) held
+2026-03-19 23:02:21 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.SPY: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 23:02:21 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.QQQ: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 23:02:21 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AAPL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 23:02:21 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.MSFT: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 23:02:21 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AMZN: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 23:02:21 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.GOOGL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 23:02:21 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.NVDA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 23:02:21 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.TSLA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 23:02:21 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 2 open | 0 exits
+2026-03-19 23:02:30 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] LTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (9737ms) → combined: SHORT_ONLY
+2026-03-19 23:02:31 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] LTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (11603ms) → combined: SHORT_ONLY
+2026-03-19 23:02:31 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] LTF: TRANSITION conf=4 dir=NO_TRADE (11003ms) → combined: WAIT
+2026-03-19 23:02:32 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] LTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (11404ms) → combined: SHORT_ONLY
+2026-03-19 23:02:33 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (13510ms) → combined: SHORT_ONLY
+2026-03-19 23:02:34 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] LTF: TRANSITION conf=4 dir=NO_TRADE (14249ms) → combined: WAIT
+2026-03-19 23:02:34 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] LTF: STRONG_DOWNTREND conf=5 dir=SHORT_ONLY (15231ms) → combined: SHORT_ONLY
+2026-03-19 23:02:41 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (20920ms) → combined: SHORT_ONLY
+2026-03-19 23:32:39 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.AMZN: direction=WAIT (src=llm) HTF=DOWNTREND LTF=TRANSITION
+2026-03-19 23:32:39 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.MSFT: direction=SHORT_ONLY (src=llm) HTF=DOWNTREND LTF=STRONG_DOWNTREND
+2026-03-19 23:32:39 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 2 open position(s)
+2026-03-19 23:32:39 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 2 position(s) held
+2026-03-19 23:32:39 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.SPY: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 23:32:39 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.QQQ: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 23:32:39 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AAPL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 23:32:39 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.MSFT: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 23:32:39 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AMZN: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 23:32:39 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.GOOGL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 23:32:39 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.NVDA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 23:32:39 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.TSLA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-19 23:32:39 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 2 open | 0 exits
+2026-03-19 23:32:45 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] HTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (9881ms)
+2026-03-19 23:32:45 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] HTF: STRONG_DOWNTREND conf=5 dir=SHORT_ONLY (7490ms)
+2026-03-19 23:32:45 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] HTF: WEAK_DOWNTREND conf=3 dir=SHORT_ONLY (7362ms)
+2026-03-19 23:32:47 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (9019ms)
+2026-03-19 23:32:48 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] HTF: DOWNTREND conf=4 dir=SHORT_ONLY (9173ms)
+2026-03-19 23:32:48 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] HTF: WEAK_DOWNTREND conf=3 dir=SHORT_ONLY (11815ms)
+2026-03-19 23:32:49 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] HTF: RANGING conf=4 dir=BOTH (13194ms)
+2026-03-19 23:32:49 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] HTF: WEAK_DOWNTREND conf=4 dir=SHORT_ONLY (14570ms)
+2026-03-19 23:32:49 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:QQQ] LTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (14202ms) → combined: SHORT_ONLY
+2026-03-19 23:32:49 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:TSLA] LTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (11375ms) → combined: SHORT_ONLY
+2026-03-19 23:32:50 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:SPY] LTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (11489ms) → combined: SHORT_ONLY
+2026-03-19 23:32:50 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AAPL] LTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (12024ms) → combined: SHORT_ONLY
+2026-03-19 23:32:50 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:AMZN] LTF: DOWNTREND conf=4 dir=SHORT_ONLY (13790ms) → combined: SHORT_ONLY
+2026-03-19 23:32:54 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:GOOGL] LTF: TRANSITION conf=4 dir=NO_TRADE (18858ms) → combined: BOTH
+2026-03-20 00:02:41 | INFO     | options_bot.scheduler.bot_scheduler | [LLM Regime] US.AMZN: direction=SHORT_ONLY (src=llm) HTF=WEAK_DOWNTREND LTF=DOWNTREND
+2026-03-20 00:02:41 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle: checking 2 open position(s)
+2026-03-20 00:02:42 | INFO     | options_bot.monitoring.position_monitor | Monitor cycle complete: all 2 position(s) held
+2026-03-20 00:02:42 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.SPY: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-20 00:02:42 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.QQQ: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-20 00:02:42 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AAPL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-20 00:02:42 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.MSFT: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-20 00:02:42 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.AMZN: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-20 00:02:42 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.GOOGL: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-20 00:02:42 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.NVDA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-20 00:02:42 | WARNING  | options_bot.scheduler.bot_scheduler | [INTRADAY] US.TSLA: rescan failed — 'MarketScanner' object has no attribute 'scan_symbol_intraday'
+2026-03-20 00:02:42 | INFO     | options_bot.scheduler.bot_scheduler | [MONITOR JOB] 2 open | 0 exits
+2026-03-20 00:02:52 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:MSFT] LTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (11408ms) → combined: SHORT_ONLY
+2026-03-20 00:02:55 | INFO     | options_bot.market.llm_regime_bridge | [LLMRegimeBridge:NVDA] LTF: STRONG_DOWNTREND conf=4 dir=SHORT_ONLY (13722ms) → combined: SHORT_ONLY

@@ -1,12 +1,11 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Options Bot Configuration
 # ─────────────────────────────────────────────────────────────────────────────
-# VALIDATION PASSED: 10/10 trades closed, 90% win rate, $1,229 realised P&L
-# Switched to live mode 2026-03-20. Covered call disabled — TSLA shares in MooMoo.
-# Re-enable covered_call and set shares_held once TSLA transferred to IBKR.
+# IMPORTANT: Set mode to "paper" until ValidationReporter says GO LIVE.
+# Never change mode to "live" until 4-week paper trading validation passes ALL gates.
 # ─────────────────────────────────────────────────────────────────────────────
 
-mode: live         # "paper" | "live"  — VALIDATION PASSED 10/10 trades, 90% win rate
+mode: paper        # "paper" | "live"  — CHANGE ONLY AFTER VALIDATION PASSES
 
 # ── Broker Configuration ─────────────────────────────────────────────────────
 # ┌─────────────────────────────────────────────────────────────────────────┐
@@ -30,7 +29,7 @@ broker:
 moomoo:
   host:       "127.0.0.1"
   port:       11111
-  trade_env:  "REAL"       # "SIMULATE" = paper | "REAL" = live
+  trade_env:  "SIMULATE"   # "SIMULATE" = paper | "REAL" = live
   stock_account_id:  "565755"       # Holds the 100 TSLA shares
   option_account_id: "4310610"      # All options orders route here
 
@@ -63,14 +62,14 @@ universe:
     - "US.AMZN"   # Post-split price in $10-width sweet spot, e-commerce + cloud IV mix
     - "US.GOOGL"  # Liquid, diversified revenue, less correlated to pure-tech names
     - "US.NVDA"   # Highest single-stock options volume, IV consistently elevated
-    - "US.TSLA"   # Spreads only — covered call disabled until shares transferred to IBKR
+    - "US.TSLA"   # 100 shares held — covered call candidate + spread strategies
 
   # Shares held override for paper trading.
   # The simulator account won't reflect real share positions, so declare them
   # here so the covered call strategy fires correctly.
   # Set to 0 (or remove) when switching to live — live account is queried directly.
   shares_held:
-    "US.TSLA": 0     # Shares in MooMoo — transfer to IBKR before re-enabling covered call
+    "US.TSLA": 100   # 100 shares held — enables covered call strategy
 
 # ── Regime detection ─────────────────────────────────────────────────────────
 regime:
@@ -121,7 +120,7 @@ options:
 strategies:
 
   covered_call:
-    enabled:                  false   # Re-enable once TSLA shares transferred from MooMoo to IBKR
+    enabled:                  true
     min_iv_rank:              30    # Only sell when IV is elevated
     max_rsi:                  70    # Don't sell calls at extreme overbought
     max_concurrent_positions: 2
@@ -159,7 +158,7 @@ portfolio_guard:
   max_risk_pct:         0.05     # Max 5% of portfolio at risk per trade
   max_total_risk_pct:   0.20     # Max 20% of portfolio at risk total
   max_trades_per_day:   3        # Max new positions per calendar day
-  portfolio_value:      1724     # IBKR account U18705798 — USD balance (converted from SGD)
+  portfolio_value:      100000   # Current portfolio value — update periodically
 
 # ── Signal ranking ───────────────────────────────────────────────────────────
 # Composite score:

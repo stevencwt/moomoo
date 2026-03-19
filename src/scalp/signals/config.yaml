@@ -159,7 +159,7 @@ portfolio_guard:
   max_risk_pct:         0.05     # Max 5% of portfolio at risk per trade
   max_total_risk_pct:   0.20     # Max 20% of portfolio at risk total
   max_trades_per_day:   3        # Max new positions per calendar day
-  portfolio_value:      1724     # IBKR account U18705798 — USD balance (converted from SGD)
+  portfolio_value:      2200     # IBKR account U18705798 — SGD 1000 converted (~USD 2200)
 
 # ── Signal ranking ───────────────────────────────────────────────────────────
 # Composite score:
