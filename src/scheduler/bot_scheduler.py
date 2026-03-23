@@ -1278,6 +1278,8 @@ class BotScheduler:
                 continue
             try:
                 snap = self._scanner.scan_symbol_intraday(symbol, morning)
+                if snap is None:
+                    continue
                 new_sigs = self._registry.evaluate(snap)
                 if new_sigs:
                     signals.extend(new_sigs)

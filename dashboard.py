@@ -86,19 +86,37 @@ BASE = """
     <span class="navbar-brand">📊 OPTIONS BOT</span>
     <div class="d-flex gap-3">
       <a class="nav-link {% if active=='overview'  %}text-white{% else %}text-secondary{% endif %}"
-         href="/">Overview</a>
+         href="/?mode={{ view_mode }}">Overview</a>
       <a class="nav-link {% if active=='positions' %}text-white{% else %}text-secondary{% endif %}"
-         href="/positions">Positions</a>
+         href="/positions?mode={{ view_mode }}">Positions</a>
       <a class="nav-link {% if active=='history'   %}text-white{% else %}text-secondary{% endif %}"
-         href="/history">History</a>
+         href="/history?mode={{ view_mode }}">History</a>
       <a class="nav-link {% if active=='stats'     %}text-white{% else %}text-secondary{% endif %}"
-         href="/stats">Stats</a>
+         href="/stats?mode={{ view_mode }}">Stats</a>
       <a class="nav-link {% if active=='scan'      %}text-white{% else %}text-secondary{% endif %}"
-         href="/scan">Scan</a>
+         href="/scan?mode={{ view_mode }}">Scan</a>
       <a class="nav-link {% if active=='analytics' %}text-white{% else %}text-secondary{% endif %}"
-         href="/analytics">Analytics</a>
+         href="/analytics?mode={{ view_mode }}">Analytics</a>
     </div>
-    <span class="refresh-note">auto-refresh {{ refresh }}s</span>
+    {# ── Mode toggle ── #}
+    <div class="btn-group btn-group-sm ms-3" role="group">
+      <a href="{{ request.path }}?mode=live"
+         class="btn {% if view_mode=='live' %}btn-danger{% else %}btn-outline-secondary{% endif %}">
+        🔴 Live
+      </a>
+      <a href="{{ request.path }}?mode=paper"
+         class="btn {% if view_mode=='paper' %}btn-warning{% else %}btn-outline-secondary{% endif %}">
+        📄 Paper
+      </a>
+      <a href="{{ request.path }}"
+         class="btn {% if view_mode=='' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+        All
+      </a>
+    </div>
+    <span class="refresh-note ms-3">
+      {% if view_mode=='live' %}🔴 LIVE only{% elif view_mode=='paper' %}📄 PAPER only{% else %}All trades{% endif %}
+      &nbsp;·&nbsp; auto-refresh {{ refresh }}s
+    </span>
   </div>
 </nav>
 <div class="container-fluid py-3 px-4">
@@ -176,12 +194,18 @@ def _reason_badge(reason: Optional[str]) -> str:
     return f'<span class="badge bg-{colour}">{label}</span>'
 
 
-def _ledger_data():
-    """Return (stats, open_trades, closed_trades) from the live ledger."""
-    stats  = _ledger.get_statistics()
-    open_t = _ledger.get_open_trades()
-    closed = _ledger.get_closed_trades()
+def _ledger_data(trade_mode: Optional[str] = None):
+    """Return (stats, open_trades, closed_trades) filtered by trade_mode ('live'|'paper'|None=all)."""
+    stats  = _ledger.get_statistics(trade_mode)
+    open_t = _ledger.get_open_trades(trade_mode)
+    closed = _ledger.get_closed_trades(trade_mode)
     return stats, open_t, closed
+
+
+def _mode_from_request() -> Optional[str]:
+    """Read ?mode= param from the current request. Returns 'live', 'paper', or None (all)."""
+    m = request.args.get("mode", "").lower()
+    return m if m in ("live", "paper") else None
 
 
 def _gate_progress(stats: Dict) -> Dict:
@@ -492,6 +516,9 @@ HISTORY_TMPL = BASE.replace("{% block content %}{% endblock %}", """
 {% block content %}
 <h5 class="mb-3 text-secondary">Trade History
   <span class="badge bg-secondary ms-1">{{ closed_trades|length }}</span>
+  {% if view_mode=='live' %}<span class="badge bg-danger ms-1">🔴 Live Only</span>
+  {% elif view_mode=='paper' %}<span class="badge bg-warning text-dark ms-1">📄 Paper Only</span>
+  {% else %}<span class="badge bg-secondary ms-1">All Trades</span>{% endif %}
 </h5>
 
 {% if closed_trades %}
@@ -501,7 +528,7 @@ HISTORY_TMPL = BASE.replace("{% block content %}{% endblock %}", """
     <table class="table table-sm table-dark table-hover mb-0">
       <thead class="table-secondary">
         <tr>
-          <th>#</th><th>Symbol</th><th>Strategy</th>
+          <th>#</th><th>Mode</th><th>Symbol</th><th>Strategy</th>
           <th>Credit</th><th>Close$</th><th>P&amp;L</th><th>% Cap.</th>
           <th>Exit</th><th>Days</th><th>DTE@Close</th>
           <th>IV@Open</th><th>IV@Close</th>
@@ -516,6 +543,7 @@ HISTORY_TMPL = BASE.replace("{% block content %}{% endblock %}", """
       {% for t in closed_trades %}
       <tr>
         <td class="text-secondary">{{ t.id }}</td>
+        <td>{% if t.get('trade_mode','paper')=='live' %}<span class="badge bg-danger">Live</span>{% else %}<span class="badge bg-secondary">Paper</span>{% endif %}</td>
         <td><strong>{{ t.symbol.replace('US.','') }}</strong></td>
         <td>{{ _strategy_badge(t.strategy_name) | safe }}</td>
 
@@ -1348,6 +1376,7 @@ def analytics_page():
         ANALYTICS_TMPL,
         active="analytics", refresh=REFRESH_SECS,
         title="Analytics", an=an,
+        view_mode=_mode_from_request() or "",
     )
 
 
@@ -1507,18 +1536,21 @@ def _load_scan_results() -> Optional[dict]:
 
 @app.route("/")
 def overview():
-    stats, open_t, closed = _ledger_data()
+    tm = _mode_from_request()
+    stats, open_t, closed = _ledger_data(tm)
     gate = _gate_progress(stats)
     return render_template_string(
         OVERVIEW_TMPL,
         active="overview", refresh=REFRESH_SECS,
         title="Overview", stats=stats,
         open_trades=open_t, gate=gate,
+        view_mode=tm or "",
     )
 
 @app.route("/positions")
 def positions():
-    stats, open_t, _ = _ledger_data()
+    tm = _mode_from_request()
+    stats, open_t, _ = _ledger_data(tm)
     mark_data   = _load_positions_mark()
     marks_by_id = mark_data.get("marks_by_id", {})
     marks_updated = mark_data.get("updated_at", None)
@@ -1529,25 +1561,33 @@ def positions():
         open_trades=open_t,
         marks_by_id=marks_by_id,
         marks_updated=marks_updated,
+        view_mode=tm or "",
     )
 
 @app.route("/history")
 def history():
-    stats, _, closed = _ledger_data()
+    tm = _mode_from_request()
+    stats, _, closed = _ledger_data(tm)
     return render_template_string(
         HISTORY_TMPL,
         active="history", refresh=REFRESH_SECS,
         title="History", stats=stats,
         closed_trades=closed,
+        view_mode=tm or "",
     )
 
 @app.route("/stats")
 def stats_page():
-    stats, _, _ = _ledger_data()
+    tm = _mode_from_request()
+    stats, _, _ = _ledger_data(tm)
+    # Belt-and-suspenders: guarantee all keys exist regardless of schema state
+    for k, v in _ledger._STATS_DEFAULTS.items():
+        stats.setdefault(k, v)
     return render_template_string(
         STATS_TMPL,
         active="stats", refresh=REFRESH_SECS,
         title="Stats", stats=stats,
+        view_mode=tm or "",
     )
 
 @app.route("/healthz")
@@ -1843,6 +1883,7 @@ def scan_page():
         SCAN_TMPL,
         active="scan", refresh=REFRESH_SECS,
         title="Scan", market=market, scan=scan,
+        view_mode=_mode_from_request() or "",
     )
 
 

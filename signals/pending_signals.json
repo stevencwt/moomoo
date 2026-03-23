@@ -94,5 +94,29 @@
     "reason": "Bear call spread opportunity | regime=neutral | IV_rank=54 | RSI=53 | %B=0.51 | sell=280.0/buy=290.0 | delta=0.32 | net_credit=$2.35 | max_loss=$766 | R/R=0.31 | DTE=33",
     "generated_at": "2026-02-28T00:33:51.451049",
     "status": "pending"
+  },
+  {
+    "id": "bull_put_spread_US.SPY_US.SPY260424P646000_20260323220001",
+    "strategy_name": "bull_put_spread",
+    "symbol": "US.SPY",
+    "signal_type": "bull_put_spread",
+    "sell_contract": "US.SPY260424P646000",
+    "buy_contract": "US.SPY260424P636000",
+    "quantity": 1,
+    "sell_price": 10.46,
+    "buy_price": 8.11,
+    "net_credit": 2.35,
+    "max_profit": 235.0,
+    "max_loss": 765.0,
+    "breakeven": 643.65,
+    "reward_risk": 0.3072,
+    "expiry": "2026-04-24",
+    "dte": 32,
+    "iv_rank": 64.11999893188477,
+    "delta": -0.345995877,
+    "regime": "bull",
+    "reason": "Bull put spread opportunity | regime=bull | IV_rank=64 | RSI=41 | %B=0.22 | sell=646.0/buy=636.0 | delta=-0.35 | net_credit=$2.35 | max_loss=$765 | R/R=0.31 | DTE=32",
+    "generated_at": "2026-03-23T22:00:01.724882",
+    "status": "pending"
   }
 ]

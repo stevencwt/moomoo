@@ -1,614 +1,419 @@
-#!/usr/bin/env python3
 """
-tests/scalp/test_gex_calculator.py
+tests/scalp/test_gex_calculator.py  —  deploy to: /Users/user/moomoo/tests/scalp/
 ====================================
-Test suite for GEXCalculator.
+Groups A (pure computation), B (live IBKR), C (edge cases)
 
-Groups:
-    A — Unit tests: pure math, no network, no IBKR
-    B — Live tests: real chain via IBKR (market hours, TWS running)
-    C — Integration: proximity checks, cache, should_refresh
+Run A+C only (no TWS):
+    python3 -m pytest tests/scalp/test_gex_calculator.py -v -k "not TestLive"
 
-Usage:
-    python3 tests/scalp/test_gex_calculator.py --unit-only
-    python3 tests/scalp/test_gex_calculator.py --account U18705798
-    python3 tests/scalp/test_gex_calculator.py --account U18705798 --symbol NVDA
+Run Group B (TWS port 7496, market hours):
+    python3 -m pytest tests/scalp/test_gex_calculator.py::TestLiveGEXCompute -v -s
 """
 
-import argparse
-import sys
-import time
-from datetime import date, datetime
-from pathlib import Path
-from unittest.mock import MagicMock, patch, PropertyMock
-
+import os, sys, time, re
+from datetime import date, datetime, timedelta
+from unittest.mock import MagicMock
 import pandas as pd
-import numpy as np
+import pytest
 
-ROOT = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(ROOT))
-
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from src.scalp.signals.gex_calculator import GEXCalculator, compute_gex
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
 
-results = []
+# ── Fixtures ──────────────────────────────────────────────────────────────────
 
-def check(label: str, passed: bool, detail: str = "") -> bool:
-    icon   = "✅" if passed else "❌"
-    suffix = f"  [{detail}]" if detail else ""
-    print(f"  {icon}  {label}{suffix}")
-    results.append((label, passed))
-    return passed
+@pytest.fixture
+def calc():
+    return GEXCalculator({})
 
-def section(title: str) -> None:
-    print(f"\n{'─'*60}")
-    print(f"  {title}")
-    print(f"{'─'*60}")
-
-def make_config(proximity_pct=0.003) -> dict:
-    return {"scalp": {"gex": {"proximity_pct": proximity_pct}}}
-
-
-# ── Synthetic chain builder ───────────────────────────────────────────────────
-
-def make_synthetic_snapshot(
-    spot: float,
-    strikes: list,
-    call_oi_pattern: dict = None,    # strike → OI multiplier
-    put_oi_pattern:  dict = None,
-    gamma_base: float = 0.05,
-) -> pd.DataFrame:
-    """
-    Build a synthetic option snapshot DataFrame for testing.
-    Gamma follows a bell curve centred on ATM (peak at spot).
-    OI can be customised per strike via pattern dicts.
-
-    Returns DataFrame with columns matching IBKRClient.get_option_snapshot():
-        option_type, strike_price, option_gamma, option_open_interest
-    """
-    rows = []
-    atm  = min(strikes, key=lambda s: abs(s - spot))
-
-    for strike in strikes:
-        # Gamma: bell curve — highest ATM, decays away
-        distance_pct = abs(strike - spot) / spot
-        gamma        = gamma_base * np.exp(-20 * distance_pct ** 2)
-        gamma        = max(gamma, 0.001)   # floor at 0.001
-
-        # Default OI: 1000 contracts, modified by pattern
-        call_oi = 1000 * (call_oi_pattern.get(strike, 1.0) if call_oi_pattern else 1.0)
-        put_oi  = 1000 * (put_oi_pattern.get(strike, 1.0)  if put_oi_pattern  else 1.0)
-
-        rows.append({
-            "option_type":          "C",
-            "strike_price":         float(strike),
-            "option_gamma":         round(gamma, 6),
-            "option_open_interest": float(call_oi),
-        })
-        rows.append({
-            "option_type":          "P",
-            "strike_price":         float(strike),
-            "option_gamma":         round(gamma, 6),
-            "option_open_interest": float(put_oi),
-        })
-
-    return pd.DataFrame(rows)
-
-
-def make_mock_client(
-    spot: float,
-    strikes: list,
-    expiries: list = None,
-    call_oi_pattern: dict = None,
-    put_oi_pattern:  dict = None,
-    gamma_base: float = 0.05,
-) -> MagicMock:
-    """Build a mock IBKRClient that returns synthetic data."""
-    client = MagicMock()
-    client.get_spot_price.return_value = spot
-
-    if expiries is None:
-        # Use a future date as default expiry
-        from datetime import date, timedelta
-        next_fri = date.today() + timedelta(days=(4 - date.today().weekday()) % 7 or 7)
-        expiries = [next_fri.isoformat()]
-
-    client.get_option_expiries.return_value = expiries
-
-    # Fake chain returns DataFrames with 'code' column
-    # OCC format: strike × 1000, zero-padded to 8 digits
-    # e.g. strike 580.0 → 580000 → '00580000'
-    codes_call = [f"SPY{e.replace('-','')[-6:]}C{str(int(s*1000)).zfill(8)}" for s in strikes
-                  for e in expiries[:1]]
-    codes_put  = [f"SPY{e.replace('-','')[-6:]}P{str(int(s*1000)).zfill(8)}" for s in strikes
-                  for e in expiries[:1]]
-
-    client.get_option_chain.side_effect = lambda sym, exp, right: (
-        pd.DataFrame({"code": codes_call}) if right in ("CALL", "C")
-        else pd.DataFrame({"code": codes_put})
-    )
-
-    snap = make_synthetic_snapshot(
-        spot, strikes, call_oi_pattern, put_oi_pattern, gamma_base
-    )
-    client.get_option_snapshot.return_value = snap
-
-    return client
-
-
-# ── Group A: Pure math / unit tests ──────────────────────────────────────────
-
-def test_group_a():
-    section("GROUP A — Unit tests (no network, no IBKR)")
-
-    # A1: Config reads correctly
-    calc = GEXCalculator(make_config(proximity_pct=0.005))
-    check("A1: proximity_pct reads from config",
-          calc._proximity_pct == 0.005, f"={calc._proximity_pct}")
-
-    calc2 = GEXCalculator({})
-    check("A1: default proximity_pct=0.003",
-          calc2._proximity_pct == 0.003, f"={calc2._proximity_pct}")
-
-    # A2: Net GEX computation — equal OI, calls dominate at call-heavy strike
-    spot    = 500.0
-    strikes = [490, 495, 500, 505, 510]
-
-    # Boost call OI at 500 massively → that strike should be gamma wall
-    snap = make_synthetic_snapshot(spot, strikes, call_oi_pattern={500: 10.0})
-    net_gex = GEXCalculator._compute_net_gex(snap, spot)
-
-    check("A2: net_gex Series not empty", not net_gex.empty,
-          f"strikes={list(net_gex.index)}")
-    check("A2: net_gex has all strikes",
-          set(net_gex.index) == set(float(s) for s in strikes),
-          f"index={sorted(net_gex.index)}")
-    check("A2: strike 500 has positive net GEX (call-heavy)",
-          net_gex[500.0] > 0, f"gex[500]={net_gex[500.0]:.0f}")
-
-    # A3: Gamma wall identification
-    # Manually set OI so 505 has the highest positive GEX
-    snap3 = make_synthetic_snapshot(
-        spot, strikes,
-        call_oi_pattern={490: 0.1, 495: 0.5, 500: 1.0, 505: 8.0, 510: 0.1}
-    )
-    net_gex3 = GEXCalculator._compute_net_gex(snap3, spot)
-    wall3    = GEXCalculator._find_gamma_wall(net_gex3)
-    check("A3: gamma wall = strike with highest positive net GEX",
-          wall3 == 505.0, f"wall={wall3}, net_gex={net_gex3.to_dict()}")
-
-    # A4: Gamma wall fallback when all GEX is negative
-    neg_snap = make_synthetic_snapshot(
-        spot, strikes,
-        call_oi_pattern={s: 0.01 for s in strikes},   # tiny call OI
-        put_oi_pattern={s: 50.0 for s in strikes},     # massive put OI
-    )
-    neg_net_gex = GEXCalculator._compute_net_gex(neg_snap, spot)
-    wall_neg    = GEXCalculator._find_gamma_wall(neg_net_gex)
-    check("A4: gamma wall fallback — no positive GEX, uses idxmax",
-          wall_neg in [float(s) for s in strikes],
-          f"wall={wall_neg}")
-
-    # A5: GEX flip level
-    # Build a net GEX series where strikes ≤ 495 sum to negative
-    net_gex_manual = pd.Series({
-        510.0:  5000.0,
-        505.0:  8000.0,
-        500.0:  3000.0,
-        495.0: -6000.0,
-        490.0: -5000.0,
-        485.0: -3000.0,
-    }).sort_index(ascending=False)
-
-    flip = GEXCalculator._find_gex_flip(net_gex_manual, 502.0)
-    # Cumsum from top: 5000, 13000, 16000, 10000, 5000, 2000 — never negative
-    # So no flip found → falls back to minimum strike
-    check("A5: GEX flip fallback to min strike when cumsum never negative",
-          flip == 485.0, f"flip={flip}")
-
-    # A5b: GEX flip when cumsum does go negative
-    net_gex_flip = pd.Series({
-        510.0:  2000.0,
-        505.0:  1000.0,
-        500.0:   500.0,
-        495.0: -5000.0,   # large put GEX — cumsum goes negative here
-        490.0: -3000.0,
-        485.0: -2000.0,
-    }).sort_index(ascending=False)
-    flip2 = GEXCalculator._find_gex_flip(net_gex_flip, 502.0)
-    # Cumsum: 2000, 3000, 3500, -1500 → goes negative at 495
-    check("A5b: GEX flip found at correct strike",
-          flip2 == 495.0, f"flip={flip2}")
-
-    # A6: is_stabilising based on total net GEX sign
-    pos_series = pd.Series({500.0: 5000.0, 495.0: 2000.0, 490.0: -1000.0})
-    neg_series = pd.Series({500.0: -5000.0, 495.0: -3000.0, 490.0: 1000.0})
-    check("A6: positive total GEX → is_stabilising=True",
-          pos_series.sum() > 0)
-    check("A6: negative total GEX → is_stabilising=False",
-          neg_series.sum() < 0)
-
-    # A7: compute() with mock client — end-to-end
-    calc7  = GEXCalculator(make_config())
-    client = make_mock_client(
-        spot=580.0,
-        strikes=[565, 570, 575, 580, 585, 590, 595],
-        call_oi_pattern={580: 5.0},   # ATM call-heavy → wall at 580
-    )
-    result = calc7.compute("SPY", client)
-
-    check("A7: compute() returns non-error result", result["error"] == "",
-          f"error='{result['error']}'")
-    check("A7: gamma_wall is a valid strike",
-          result["gamma_wall"] in [565.0, 570.0, 575.0, 580.0, 585.0, 590.0, 595.0],
-          f"wall={result['gamma_wall']}")
-    check("A7: gex_flip is a valid strike",
-          result["gex_flip"] in [565.0, 570.0, 575.0, 580.0, 585.0, 590.0, 595.0],
-          f"flip={result['gex_flip']}")
-    check("A7: spot returned correctly", result["spot"] == 580.0, f"={result['spot']}")
-    check("A7: is_stabilising is bool", isinstance(result["is_stabilising"], bool))
-    check("A7: net_gex_series is pd.Series",
-          isinstance(result["net_gex_series"], pd.Series))
-    check("A7: computed_at is recent", abs(time.time() - result["computed_at"]) < 5)
-
-    # A8: compute() result is cached
-    cached = calc7.get_cached("SPY")
-    check("A8: result cached after compute()", cached is not None)
-    check("A8: cached gamma_wall matches", cached["gamma_wall"] == result["gamma_wall"])
-
-    # A9: compute() with client error returns safe error result
-    bad_client = MagicMock()
-    bad_client.get_spot_price.side_effect = Exception("IBKR disconnected")
-    result_err = calc7.compute("QQQ", bad_client)
-    check("A9: error result has error field", result_err["error"] != "",
-          f"error='{result_err['error']}'")
-    check("A9: error result is_stabilising=True (conservative default)",
-          result_err["is_stabilising"])
-    check("A9: error result gamma_wall=0.0", result_err["gamma_wall"] == 0.0)
-
-    # A10: _compute_net_gex handles missing gamma/OI gracefully
-    snap_missing = pd.DataFrame([
-        {"option_type": "C", "strike_price": 500.0,
-         "option_gamma": None, "option_open_interest": 1000.0},
-        {"option_type": "C", "strike_price": 505.0,
-         "option_gamma": 0.05, "option_open_interest": None},
-        {"option_type": "C", "strike_price": 510.0,
-         "option_gamma": 0.03, "option_open_interest": 800.0},
-        {"option_type": "P", "strike_price": 510.0,
-         "option_gamma": 0.03, "option_open_interest": 500.0},
+@pytest.fixture
+def spy_snap():
+    """Call-dominant — positive total GEX (stabilising)."""
+    spot = 562.0
+    df = pd.DataFrame([
+        {"option_type": "C", "strike_price": 560.0, "option_gamma": 0.060, "option_open_interest": 20000},
+        {"option_type": "C", "strike_price": 565.0, "option_gamma": 0.055, "option_open_interest": 25000},
+        {"option_type": "C", "strike_price": 570.0, "option_gamma": 0.040, "option_open_interest": 30000},
+        {"option_type": "C", "strike_price": 575.0, "option_gamma": 0.028, "option_open_interest": 22000},
+        {"option_type": "P", "strike_price": 558.0, "option_gamma": 0.055, "option_open_interest": 12000},
+        {"option_type": "P", "strike_price": 555.0, "option_gamma": 0.048, "option_open_interest": 18000},
+        {"option_type": "P", "strike_price": 550.0, "option_gamma": 0.038, "option_open_interest": 30000},
+        {"option_type": "P", "strike_price": 545.0, "option_gamma": 0.025, "option_open_interest": 35000},
     ])
-    net_missing = GEXCalculator._compute_net_gex(snap_missing, 507.0)
-    check("A10: rows with missing gamma/OI dropped gracefully",
-          510.0 in net_missing.index and 500.0 not in net_missing.index,
-          f"index={sorted(net_missing.index)}")
+    return df, spot
 
-    # A11: is_near_gex_level proximity check
-    calc11 = GEXCalculator(make_config(proximity_pct=0.003))
-    calc11._cache["SPY"] = {
-        "gamma_wall": 580.0,
-        "gex_flip":   570.0,
-        "error":      "",
-    }
-    # spot=580.5: 0.5/580=0.086% — within 0.3%
-    near1 = calc11.is_near_gex_level("SPY", 580.5)
-    check("A11: spot within 0.3% of wall → near_wall=True",
-          near1["near_wall"], f"dist={near1['wall_dist_pct']:.3f}%")
-
-    # spot=585: 5/580=0.86% — outside 0.3%
-    near2 = calc11.is_near_gex_level("SPY", 585.0)
-    check("A11: spot 0.86% from wall → near_wall=False",
-          not near2["near_wall"], f"dist={near2['wall_dist_pct']:.3f}%")
-
-    # spot=570.2: near flip
-    near3 = calc11.is_near_gex_level("SPY", 570.2)
-    check("A11: spot within 0.3% of flip → near_flip=True",
-          near3["near_flip"], f"flip_dist={near3['flip_dist_pct']:.3f}%")
-
-    # A12: is_near_gex_level returns safe result when no cache
-    calc12 = GEXCalculator(make_config())
-    no_cache = calc12.is_near_gex_level("NVDA", 800.0)
-    check("A12: no cache → near_wall=False, near_flip=False",
-          not no_cache["near_wall"] and not no_cache["near_flip"])
-    check("A12: no cache → side='none'", no_cache["side"] == "none")
-
-    # A13: _select_front_expiry picks nearest future date
-    from datetime import timedelta
-    today    = date.today()
-    expiries = [
-        (today - timedelta(days=1)).isoformat(),   # past — should be skipped
-        (today + timedelta(days=2)).isoformat(),   # nearest future
-        (today + timedelta(days=9)).isoformat(),
-        (today + timedelta(days=30)).isoformat(),
-    ]
-    front = GEXCalculator._select_front_expiry(expiries)
-    check("A13: front expiry skips past dates, picks nearest future",
-          front == expiries[1], f"front={front}, expected={expiries[1]}")
-
-    # A14: _select_front_expiry includes today
-    expiries_with_today = [
-        today.isoformat(),
-        (today + timedelta(days=7)).isoformat(),
-    ]
-    front_today = GEXCalculator._select_front_expiry(expiries_with_today)
-    check("A14: front expiry includes today if present",
-          front_today == today.isoformat(), f"front={front_today}")
-
-    # A15: net_gex column normalisation — alternative column names
-    snap_alt = pd.DataFrame([
-        {"right": "C", "strike": 500.0, "gamma": 0.05, "oi": 1000.0},
-        {"right": "P", "strike": 500.0, "gamma": 0.05, "oi":  800.0},
-        {"right": "C", "strike": 505.0, "gamma": 0.03, "oi":  500.0},
-        {"right": "P", "strike": 505.0, "gamma": 0.03, "oi":  600.0},
+@pytest.fixture
+def put_heavy_snap():
+    """Put-dominant — negative total GEX (amplifying)."""
+    spot = 562.0
+    df = pd.DataFrame([
+        {"option_type": "C", "strike_price": 565.0, "option_gamma": 0.020, "option_open_interest":  3000},
+        {"option_type": "P", "strike_price": 558.0, "option_gamma": 0.060, "option_open_interest": 40000},
+        {"option_type": "P", "strike_price": 555.0, "option_gamma": 0.050, "option_open_interest": 50000},
+        {"option_type": "P", "strike_price": 550.0, "option_gamma": 0.040, "option_open_interest": 45000},
     ])
-    try:
-        net_alt = GEXCalculator._compute_net_gex(snap_alt, 502.0)
-        check("A15: alternative column names (right/gamma/oi/strike) handled",
-              not net_alt.empty, f"strikes={sorted(net_alt.index)}")
-    except Exception as e:
-        check("A15: alternative column names handled", False, str(e))
+    return df, spot
 
 
-# ── Group B: Live IBKR tests ──────────────────────────────────────────────────
+# ── Group A — Pure computation ────────────────────────────────────────────────
 
-def test_group_b(account: str, symbol: str = "SPY"):
-    section(f"GROUP B — Live IBKR tests ({symbol}, requires TWS + market hours)")
-    print(f"  Connecting to TWS | account={account} | client_id=4\n")
+class TestNetGEXComputation:
 
-    try:
-        sys.path.insert(0, str(ROOT / "ibkr-connector"))
-    except Exception:
-        pass
+    def test_call_gex_positive(self, spy_snap):
+        snap, spot = spy_snap
+        net = GEXCalculator._compute_net_gex(snap, spot)
+        for s in [560.0, 565.0, 570.0, 575.0]:
+            assert net.loc[s] > 0
 
-    try:
-        from ibkr_connector import IBKRClient
-    except ImportError:
+    def test_put_gex_negative(self, spy_snap):
+        snap, spot = spy_snap
+        net = GEXCalculator._compute_net_gex(snap, spot)
+        for s in [545.0, 550.0, 555.0, 558.0]:
+            assert net.loc[s] < 0
+
+    def test_call_formula_exact(self):
+        snap = pd.DataFrame([{"option_type": "C", "strike_price": 100.0, "option_gamma": 0.05, "option_open_interest": 1000}])
+        net = GEXCalculator._compute_net_gex(snap, 100.0)
+        assert abs(net.loc[100.0] - (0.05 * 1000 * 100.0 * 100)) < 0.01
+
+    def test_put_formula_exact(self):
+        snap = pd.DataFrame([{"option_type": "P", "strike_price": 100.0, "option_gamma": 0.05, "option_open_interest": 1000}])
+        net = GEXCalculator._compute_net_gex(snap, 100.0)
+        assert abs(net.loc[100.0] + (0.05 * 1000 * 100.0 * 100)) < 0.01
+
+    def test_same_strike_aggregated(self):
+        snap = pd.DataFrame([
+            {"option_type": "C", "strike_price": 100.0, "option_gamma": 0.05, "option_open_interest": 1000},
+            {"option_type": "C", "strike_price": 100.0, "option_gamma": 0.03, "option_open_interest":  500},
+        ])
+        net = GEXCalculator._compute_net_gex(snap, 100.0)
+        assert len(net) == 1
+        expected = (0.05 * 1000 + 0.03 * 500) * 100.0 * 100
+        assert abs(net.loc[100.0] - expected) < 0.01
+
+    def test_drops_zero_gamma(self):
+        snap = pd.DataFrame([
+            {"option_type": "C", "strike_price": 100.0, "option_gamma": 0.0,  "option_open_interest": 1000},
+            {"option_type": "C", "strike_price": 105.0, "option_gamma": 0.05, "option_open_interest":  500},
+        ])
+        net = GEXCalculator._compute_net_gex(snap, 100.0)
+        assert 100.0 not in net.index and 105.0 in net.index
+
+    def test_drops_zero_oi(self):
+        snap = pd.DataFrame([
+            {"option_type": "C", "strike_price": 100.0, "option_gamma": 0.05, "option_open_interest":   0},
+            {"option_type": "C", "strike_price": 105.0, "option_gamma": 0.05, "option_open_interest": 500},
+        ])
+        net = GEXCalculator._compute_net_gex(snap, 100.0)
+        assert 100.0 not in net.index and 105.0 in net.index
+
+    def test_stabilising_positive(self, spy_snap):
+        snap, spot = spy_snap
+        assert GEXCalculator._compute_net_gex(snap, spot).sum() > 0
+
+    def test_amplifying_negative(self, put_heavy_snap):
+        snap, spot = put_heavy_snap
+        assert GEXCalculator._compute_net_gex(snap, spot).sum() < 0
+
+
+class TestGammaWall:
+
+    def test_returns_highest_positive(self, spy_snap):
+        snap, spot = spy_snap
+        net  = GEXCalculator._compute_net_gex(snap, spot)
+        wall = GEXCalculator._find_gamma_wall(net)
+        assert wall in [560.0, 565.0, 570.0, 575.0]
+
+    def test_is_valid_index(self, spy_snap):
+        snap, spot = spy_snap
+        net = GEXCalculator._compute_net_gex(snap, spot)
+        assert GEXCalculator._find_gamma_wall(net) in net.index.tolist()
+
+    def test_fallback_when_all_negative(self):
+        net = pd.Series({100.0: -500.0, 105.0: -200.0, 110.0: -800.0})
+        assert GEXCalculator._find_gamma_wall(net) == 105.0
+
+
+class TestGEXFlip:
+
+    def test_flip_lte_wall(self, spy_snap):
+        snap, spot = spy_snap
+        net  = GEXCalculator._compute_net_gex(snap, spot)
+        assert GEXCalculator._find_gex_flip(net, spot) <= GEXCalculator._find_gamma_wall(net)
+
+    def test_flip_is_valid_strike(self, spy_snap):
+        snap, spot = spy_snap
+        net  = GEXCalculator._compute_net_gex(snap, spot)
+        assert GEXCalculator._find_gex_flip(net, spot) in net.index.tolist()
+
+    def test_fully_stabilising_returns_lowest(self):
+        net = pd.Series({500.0: 1e6, 505.0: 2e6, 510.0: 3e6})
+        assert GEXCalculator._find_gex_flip(net, 507.0) == 500.0
+
+    def test_cumsum_logic_manual(self):
+        net = pd.Series({570.0: 5_000_000, 565.0: 3_000_000,
+                         560.0: -2_000_000, 555.0: -8_000_000, 550.0: -4_000_000})
+        assert GEXCalculator._find_gex_flip(net, 563.0) == 555.0
+
+    def test_flip_in_amplifying_env(self, put_heavy_snap):
+        snap, spot = put_heavy_snap
+        net  = GEXCalculator._compute_net_gex(snap, spot)
+        assert GEXCalculator._find_gex_flip(net, spot) in net.index.tolist()
+
+
+class TestOCCCodeGeneration:
+
+    def test_covers_30_pct_range(self):
+        codes   = GEXCalculator._generate_occ_codes("SPY", "260320", 500.0)
+        strikes = sorted({int(c[-8:]) / 1000 for c in codes if "260320C" in c})
+        assert min(strikes) <= 351 and max(strikes) >= 649
+
+    def test_occ_format(self):
+        codes   = GEXCalculator._generate_occ_codes("SPY", "260320", 500.0)
+        pattern = re.compile(r"^[A-Z]{1,6}\d{6}[CP]\d{8}$")
+        for code in codes[:20]:
+            assert pattern.match(code)
+
+    def test_equal_calls_and_puts(self):
+        codes = GEXCalculator._generate_occ_codes("SPY", "260320", 500.0)
+        assert len([c for c in codes if "C" in c[10]]) == len([c for c in codes if "P" in c[10]])
+
+    def test_increment_1_below_200(self):
+        codes   = GEXCalculator._generate_occ_codes("TEST", "260320", 150.0)
+        strikes = sorted({int(c[-8:]) / 1000 for c in codes if "260320C" in c})
+        diffs   = [round(strikes[i+1] - strikes[i], 4) for i in range(len(strikes)-1)]
+        assert all(abs(d - 1.0) < 0.001 for d in diffs)
+
+    def test_increment_5_spy_range(self):
+        codes   = GEXCalculator._generate_occ_codes("SPY", "260320", 562.0)
+        strikes = sorted({int(c[-8:]) / 1000 for c in codes if "260320C" in c})
+        diffs   = [round(strikes[i+1] - strikes[i], 4) for i in range(len(strikes)-1)]
+        assert all(abs(d - 5.0) < 0.001 for d in diffs)
+
+    def test_increment_10_above_1000(self):
+        codes   = GEXCalculator._generate_occ_codes("NVDA", "260320", 1200.0)
+        strikes = sorted({int(c[-8:]) / 1000 for c in codes if "260320C" in c})
+        diffs   = [round(strikes[i+1] - strikes[i], 4) for i in range(len(strikes)-1)]
+        assert all(abs(d - 10.0) < 0.001 for d in diffs)
+
+
+class TestProximityCheck:
+
+    def _c(self, wall, flip, spot):
+        c = GEXCalculator({"scalp": {"gex": {"proximity_pct": 0.003}}})
+        c._cache["SPY"] = {"gamma_wall": wall, "gex_flip": flip, "spot": spot, "error": ""}
+        return c
+
+    def test_at_wall(self):
+        assert self._c(560.0, 545.0, 562.0).is_near_gex_level("SPY", 560.0)["near_wall"]
+
+    def test_within_tolerance(self):
+        assert self._c(560.0, 545.0, 562.0).is_near_gex_level("SPY", 561.5)["near_wall"]
+
+    def test_outside_tolerance(self):
+        assert not self._c(560.0, 545.0, 562.0).is_near_gex_level("SPY", 557.5)["near_wall"]
+
+    def test_above_wall_side(self):
+        assert self._c(560.0, 545.0, 562.0).is_near_gex_level("SPY", 560.5)["side"] == "above_wall"
+
+    def test_no_cache_safe_defaults(self, calc):
+        r = calc.is_near_gex_level("SPY", 562.0)
+        assert r["near_wall"] is False and r["wall_dist_pct"] == 999.0
+
+
+class TestCacheAndRefresh:
+
+    def test_no_cache_stale(self, calc):
+        assert calc.should_refresh("SPY")
+
+    def test_get_cached_none_when_empty(self, calc):
+        assert calc.get_cached("SPY") is None
+
+    def test_get_cached_returns_stored(self, calc):
+        fake = {"gamma_wall": 560.0, "error": ""}
+        calc._cache["SPY"] = fake
+        assert calc.get_cached("SPY") == fake
+
+    def test_before_first_refresh_not_stale(self, calc):
+        from zoneinfo import ZoneInfo
+        calc._cache["SPY"] = {"computed_at": time.time(), "error": ""}
+        et = datetime.now(ZoneInfo("America/New_York")).replace(hour=8, minute=0)
+        assert not calc.should_refresh("SPY", et)
+
+
+class TestFrontExpirySelect:
+
+    def test_returns_nearest_future(self):
+        today = date.today()
+        exp = [(today - timedelta(1)).isoformat(),
+               (today + timedelta(2)).isoformat(),
+               (today + timedelta(9)).isoformat()]
+        assert GEXCalculator._select_front_expiry(exp) == exp[1]
+
+    def test_includes_today(self):
+        today  = date.today().isoformat()
+        future = (date.today() + timedelta(7)).isoformat()
+        assert GEXCalculator._select_front_expiry([today, future]) == today
+
+    def test_raises_when_all_past(self):
+        past = [(date.today() - timedelta(i)).isoformat() for i in range(1, 4)]
+        with pytest.raises(ValueError, match="No valid"):
+            GEXCalculator._select_front_expiry(past)
+
+
+class TestErrorResult:
+
+    def test_structure(self):
+        r = GEXCalculator._error_result("SPY", "err")
+        assert {"symbol","gamma_wall","gex_flip","is_stabilising",
+                "net_gex_series","total_net_gex","spot","expiry",
+                "computed_at","error"}.issubset(r.keys())
+
+    def test_error_field(self):
+        assert GEXCalculator._error_result("SPY", "my error")["error"] == "my error"
+
+    def test_conservative_default(self):
+        assert GEXCalculator._error_result("SPY", "x")["is_stabilising"] is True
+
+
+# ── Group B — Live IBKR ───────────────────────────────────────────────────────
+
+class TestLiveGEXCompute:
+
+    @pytest.fixture(scope="class")
+    def live_client(self):
+        """
+        Uses IBKRClient from ibkr-connector package.
+        client_id=3: options bot=1, test scripts=2, scalp bot=3.
+
+        asyncio fix: pytest on Python 3.13 has no current event loop by
+        default. ib_insync's qualifyContracts() calls asyncio.get_event_loop()
+        internally — without a running loop, it returns silently with conId=0,
+        causing reqSecDefOptParams to return empty expirations.
+        Solution: set a new event loop before creating IBKRClient so
+        asyncio.get_event_loop() always returns a valid loop.
+        """
         try:
-            from src.connectors.ibkr_connector import IBKRConnector as IBKRClient
-        except ImportError:
-            check("B0: IBKRClient importable", False,
-                  "Install ibkr_connector: pip install -e /Users/user/ibkr-connector")
-            return
+            import asyncio
+            import yaml
 
-    client = IBKRClient(
-        port=7496,
-        account=account,
-        client_id=4,   # options=1, test_suite=2, stream_test=3, gex_test=4
-        mode="paper",
-    )
+            # Must be set BEFORE IBKRClient / IB() is created
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
 
-    try:
-        client.connect()
-        check("B0: connected to IBKR TWS", client.is_connected(),
-              f"account={account}")
-    except Exception as e:
-        check("B0: connected to IBKR TWS", False, str(e))
-        return
+            with open("config/config.yaml") as f:
+                cfg = yaml.safe_load(f)
+            ibkr_cfg = cfg.get("ibkr", {})
+            from ibkr_connector import IBKRClient
+            client = IBKRClient(
+                host=      ibkr_cfg.get("host", "127.0.0.1"),
+                port=      ibkr_cfg.get("port", 7496),
+                client_id= 3,
+                account=   ibkr_cfg.get("account", ""),
+                mode=      cfg.get("mode", "live"),
+            )
+            client.connect()
+            if not client.is_connected():
+                pytest.skip("TWS not connected — skipping Group B live tests")
+            yield client
+            client.disconnect()
+        except Exception as e:
+            pytest.skip(f"IBKR unavailable: {e}")
 
-    calc = GEXCalculator(make_config())
+    def test_spy_wall_valid(self, live_client):
+        result = GEXCalculator({}).compute("SPY", live_client)
+        assert result["error"] == "", result["error"]
+        assert result["gamma_wall"] > 0
+        assert result["data_source"] == "ibkr_snapshot"
+        print(f"\nSPY wall=${result['gamma_wall']:.2f} flip=${result['gex_flip']:.2f} "
+              f"stabilising={result['is_stabilising']} spot=${result['spot']:.2f}")
 
-    # B1: compute() against live chain
-    try:
-        print(f"  Computing GEX for {symbol}...")
-        # Debug: print spot and raw chain size before compute
-        try:
-            raw_spot = client.get_spot_price(symbol)
-            expiries = client.get_option_expiries(symbol)
-            front    = sorted([e for e in expiries if e >= str(__import__('datetime').date.today())])[0]
-            calls_raw = client.get_option_chain(symbol, front, "CALL")
-            puts_raw  = client.get_option_chain(symbol, front, "PUT")
-            print(f"  Debug: spot=${raw_spot:.2f}  expiry={front}  "
-                  f"calls={len(calls_raw)}  puts={len(puts_raw)}")
-            if not calls_raw.empty and "code" in calls_raw.columns:
-                sample = calls_raw["code"].head(3).tolist()
-                print(f"  Debug: sample codes: {sample}")
-        except Exception as dbg_e:
-            print(f"  Debug: pre-check failed: {dbg_e}")
-        result = calc.compute(symbol, client)
+    def test_qqq_sufficient_strikes(self, live_client):
+        result = GEXCalculator({}).compute("QQQ", live_client)
+        assert result["error"] == "", result["error"]
+        n = len(result["net_gex_series"])
+        assert n >= 10, f"Only {n} strikes with valid gamma+OI from snapshot"
 
-        check("B1: compute() no error", result["error"] == "",
-              f"error='{result['error']}'")
-        check("B1: gamma_wall > 0", result["gamma_wall"] > 0,
-              f"wall=${result['gamma_wall']:.2f}")
-        check("B1: gex_flip > 0", result["gex_flip"] > 0,
-              f"flip=${result['gex_flip']:.2f}")
-        check("B1: spot > 0", result["spot"] > 0, f"spot=${result['spot']:.2f}")
-        check("B1: expiry is valid ISO date",
-              len(result["expiry"]) == 10, f"expiry={result['expiry']}")
-        check("B1: net_gex_series not empty",
-              len(result["net_gex_series"]) > 0,
-              f"{len(result['net_gex_series'])} strikes")
-        check("B1: total_net_gex is float",
-              isinstance(result["total_net_gex"], float),
-              f"total={result['total_net_gex']:.0f}")
-        check("B1: is_stabilising is bool",
-              isinstance(result["is_stabilising"], bool),
-              f"stabilising={result['is_stabilising']}")
-
-        # Print the GEX map for visual inspection
-        spot = result["spot"]
-        wall = result["gamma_wall"]
-        flip = result["gex_flip"]
-        print(f"\n  {'─'*50}")
-        print(f"  {symbol} GEX Map  |  expiry={result['expiry']}")
-        print(f"  {'─'*50}")
-        if spot <= 0:
-            print("  (no data — spot=0, computation failed)")
-        else:
-            print(f"  Spot            : ${spot:.2f}")
-            print(f"  Gamma wall      : ${wall:.2f}  "
-                  f"({(wall-spot)/spot*100:+.2f}% from spot)")
-            print(f"  GEX flip        : ${flip:.2f}  "
-                  f"({(flip-spot)/spot*100:+.2f}% from spot)")
-        print(f"  Mode            : "
-              f"{'STABILISING (reversion)' if result['is_stabilising'] else 'AMPLIFYING (momentum)'}")
-        print(f"  Total net GEX   : {result['total_net_gex']:+,.0f}")
-        print(f"  Call GEX        : {result['call_gex_total']:+,.0f}")
-        print(f"  Put GEX         : {result['put_gex_total']:+,.0f}")
-        print(f"  Strikes in chain: {len(result['net_gex_series'])}")
-
-        # Print top 10 strikes by absolute GEX
-        print(f"\n  Top 10 strikes by |GEX|:")
-        top10 = result["net_gex_series"].abs().nlargest(10)
-        for strike in top10.index:
-            gex_val = result["net_gex_series"][strike]
-            marker  = " ← wall" if strike == wall else (" ← flip" if strike == flip else "")
-            dist    = (strike - spot) / spot * 100 if spot > 0 else 0.0
-            print(f"    ${strike:>7.2f}  ({dist:+5.2f}%)  GEX={gex_val:>+12,.0f}{marker}")
-        print()
-
-        # B2: Proximity check near current spot
-        prox = calc.is_near_gex_level(symbol, spot)
-        check("B2: is_near_gex_level() returns valid structure",
-              "near_wall" in prox and "near_flip" in prox)
-        check("B2: wall_dist_pct is float",
-              isinstance(prox["wall_dist_pct"], float),
-              f"{prox['wall_dist_pct']:.3f}%")
-        print(f"  Proximity check  : wall_dist={prox['wall_dist_pct']:.3f}%  "
-              f"flip_dist={prox['flip_dist_pct']:.3f}%  "
-              f"near_wall={prox['near_wall']}  side={prox['side']}")
-
-        # B3: Cache check
-        cached = calc.get_cached(symbol)
-        check("B3: result cached after compute()", cached is not None)
-        if cached is not None:
-            check("B3: cached wall matches",
-                  cached["gamma_wall"] == result["gamma_wall"],
-                  f"cached={cached['gamma_wall']} result={result['gamma_wall']}")
-
-        # B4: Second symbol (QQQ) if primary was SPY
-        if symbol == "SPY":
-            print(f"\n  Computing GEX for QQQ...")
-            result_qqq = calc.compute("QQQ", client)
-            check("B4: QQQ compute() no error", result_qqq["error"] == "",
-                  f"error='{result_qqq['error']}'")
-            check("B4: QQQ gamma_wall > 0", result_qqq["gamma_wall"] > 0,
-                  f"wall=${result_qqq['gamma_wall']:.2f}")
-            print(f"  QQQ wall=${result_qqq['gamma_wall']:.2f}  "
-                  f"flip=${result_qqq['gex_flip']:.2f}  "
-                  f"spot=${result_qqq['spot']:.2f}  "
-                  f"{'STAB' if result_qqq['is_stabilising'] else 'AMP'}")
-
-    except Exception as e:
-        check("B1: compute() no error", False, str(e))
-        import traceback; traceback.print_exc()
-    finally:
-        client.disconnect()
-        print("\n  Disconnected")
+    def test_cached_after_compute(self, live_client):
+        calc = GEXCalculator({})
+        calc.compute("SPY", live_client)
+        assert calc.get_cached("SPY") is not None
 
 
-# ── Group C: Integration tests ────────────────────────────────────────────────
+# ── Group C — Edge cases ──────────────────────────────────────────────────────
 
-def test_group_c():
-    section("GROUP C — Integration tests (proximity, cache, refresh logic)")
+class TestColumnNormalisation:
 
-    # C1: compute() then is_near_gex_level() pipeline
-    calc   = GEXCalculator(make_config(proximity_pct=0.003))
-    client = make_mock_client(
-        spot=580.0,
-        strikes=[570, 575, 580, 585, 590],
-        call_oi_pattern={580: 8.0},   # strong wall at 580
-    )
-    result = calc.compute("SPY", client)
-    check("C1: pipeline — compute succeeds", result["error"] == "")
+    def test_standard_columns(self):
+        snap = pd.DataFrame([{"option_type": "C", "strike_price": 100.0, "option_gamma": 0.05, "option_open_interest": 1000}])
+        assert not GEXCalculator._compute_net_gex(snap, 100.0).empty
 
-    # Test spot very near wall
-    spot_near_wall = result["gamma_wall"] * 1.002  # 0.2% above wall
-    prox = calc.is_near_gex_level("SPY", spot_near_wall)
-    check("C1: pipeline — spot 0.2% from wall triggers near_wall",
-          prox["near_wall"], f"dist={prox['wall_dist_pct']:.3f}%")
+    def test_short_column_names(self):
+        snap = pd.DataFrame([{"right": "C", "strike": 100.0, "gamma": 0.05, "oi": 1000}])
+        assert not GEXCalculator._compute_net_gex(snap, 100.0).empty
 
-    # C2: Multiple symbols cached independently
-    calc2   = GEXCalculator(make_config())
-    client_spy = make_mock_client(580.0, [570, 575, 580, 585, 590])
-    client_qqq = make_mock_client(470.0, [460, 465, 470, 475, 480])
-    calc2.compute("SPY", client_spy)
-    calc2.compute("QQQ", client_qqq)
-    check("C2: SPY and QQQ cached independently",
-          calc2.get_cached("SPY") is not None and calc2.get_cached("QQQ") is not None)
-    check("C2: SPY spot != QQQ spot in cache",
-          calc2.get_cached("SPY")["spot"] != calc2.get_cached("QQQ")["spot"])
+    def test_call_from_occ_code(self):
+        snap = pd.DataFrame([{"code": "SPY260320C00560000", "strike_price": 560.0, "option_gamma": 0.05, "option_open_interest": 1000}])
+        net = GEXCalculator._compute_net_gex(snap, 560.0)
+        assert not net.empty and net.loc[560.0] > 0
 
-    # C3: Error result doesn't pollute cache with bad data
-    calc3 = GEXCalculator(make_config())
-    bad_client = MagicMock()
-    bad_client.get_spot_price.return_value = 0.0   # invalid
-    bad_client.get_option_expiries.return_value = []
-    result_err = calc3.compute("NVDA", bad_client)
-    check("C3: invalid spot → error result returned",
-          result_err["error"] != "", f"error='{result_err['error']}'")
-
-    # C4: GEX with realistic SPY-like values — sanity check magnitudes
-    # SPY at 580, gamma ~0.005 at ATM, OI ~50000 contracts
-    # Use realistic OI (50000 base) so GEX magnitude is correct
-    # ATM gex = gamma × OI × spot × 100
-    #         ≈ 0.005 × 50000 × 580 × 100 = 14,500,000
-    # Call heavy at 580 (3×): ≈ 0.005 × 150000 × 580 × 100 ≈ 43,500,000
-    import pandas as pd
-    rows_realistic = []
-    for strike in range(555, 605, 5):
-        dist  = abs(strike - 580.0) / 580.0
-        gamma = 0.005 * __import__('numpy').exp(-20 * dist**2)
-        gamma = max(gamma, 0.0005)
-        call_oi = 150000.0 if strike == 580 else 50000.0
-        put_oi  = 50000.0
-        rows_realistic += [
-            {"option_type": "C", "strike_price": float(strike),
-             "option_gamma": gamma, "option_open_interest": call_oi},
-            {"option_type": "P", "strike_price": float(strike),
-             "option_gamma": gamma, "option_open_interest": put_oi},
-        ]
-    snap_realistic  = pd.DataFrame(rows_realistic)
-    net_realistic   = GEXCalculator._compute_net_gex(snap_realistic, 580.0)
-    atm_gex = float(net_realistic.get(580.0, 0))
-    check("C4: ATM GEX magnitude is reasonable (>1M, <500B)",
-          1e6 < abs(atm_gex) < 5e11, f"ATM GEX={atm_gex:.2e}")
-
-    # C5: compute_gex() standalone helper works
-    client5 = make_mock_client(500.0, [490, 495, 500, 505, 510])
-    result5 = compute_gex(client5, "SPY")
-    check("C5: compute_gex() standalone helper works",
-          result5["error"] == "" and result5["gamma_wall"] > 0,
-          f"wall={result5['gamma_wall']}")
+    def test_put_from_occ_code(self):
+        snap = pd.DataFrame([{"code": "SPY260320P00560000", "strike_price": 560.0, "option_gamma": 0.05, "option_open_interest": 1000}])
+        net = GEXCalculator._compute_net_gex(snap, 560.0)
+        assert not net.empty and net.loc[560.0] < 0
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+class TestMissingColumns:
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--unit-only",  action="store_true")
-    parser.add_argument("--account",    default="")
-    parser.add_argument("--symbol",     default="SPY")
-    args = parser.parse_args()
+    def test_raises_missing_gamma(self):
+        snap = pd.DataFrame([{"option_type": "C", "strike_price": 100.0, "option_open_interest": 1000}])
+        with pytest.raises(ValueError, match="missing required columns"):
+            GEXCalculator._compute_net_gex(snap, 100.0)
 
-    print(f"\n{'='*60}")
-    print(f"  GEXCalculator Test Suite")
-    print(f"{'='*60}")
-
-    test_group_a()
-    test_group_c()
-
-    if args.account and not args.unit_only:
-        test_group_b(args.account, args.symbol)
-    elif not args.unit_only and not args.account:
-        print("\n  Skipping Group B — pass --account U18705798 to run live tests")
-
-    # Summary
-    passed = sum(1 for _, p in results if p)
-    total  = len(results)
-    print(f"\n{'='*60}")
-    print(f"  SUMMARY")
-    print(f"{'='*60}")
-    for label, p in results:
-        print(f"  {'✅' if p else '❌'}  {label}")
-    print(f"{'─'*60}")
-    print(f"  {passed}/{total} passed ({passed/total*100:.0f}%)")
-    if passed == total:
-        print("  ✓ All checks passed")
-    else:
-        print(f"  ⚠️  {total-passed} failed")
-    print()
+    def test_empty_when_all_filtered(self):
+        snap = pd.DataFrame([{"option_type": "C", "strike_price": 100.0, "option_gamma": 0.0, "option_open_interest": 0}])
+        assert GEXCalculator._compute_net_gex(snap, 100.0).empty
 
 
-if __name__ == "__main__":
-    main()
+class TestHasIBConnection:
+
+    def test_ibkr_connector(self):
+        mock = MagicMock(); mock.isConnected.return_value = True
+        client = MagicMock(); client._ib = mock
+        assert GEXCalculator._has_ib_connection(client)
+
+    def test_ibkr_client_package(self):
+        mock = MagicMock(); mock.isConnected.return_value = True
+        client = MagicMock(spec=[]); client.ib = mock
+        assert GEXCalculator._has_ib_connection(client)
+
+    def test_no_ib_attr(self):
+        assert not GEXCalculator._has_ib_connection(MagicMock(spec=[]))
+
+
+class TestSymbolNormalisation:
+
+    def test_strips_us_prefix(self, calc):
+        client = MagicMock()
+        client.get_spot_price.return_value = 100.0
+        client.get_option_expiries.return_value = [(date.today() + timedelta(3)).isoformat()]
+        client.get_option_snapshot.return_value = pd.DataFrame()
+        assert calc.compute("US.SPY", client)["symbol"] == "SPY"
+
+    def test_uppercase(self, calc):
+        client = MagicMock()
+        client.get_spot_price.return_value = 100.0
+        client.get_option_expiries.return_value = [(date.today() + timedelta(3)).isoformat()]
+        client.get_option_snapshot.return_value = pd.DataFrame()
+        assert calc.compute("spy", client)["symbol"] == "SPY"
+
+
+class TestZeroFiltering:
+
+    def test_all_zero_gamma_empty(self):
+        snap = pd.DataFrame([{"option_type": "C", "strike_price": s, "option_gamma": 0.0, "option_open_interest": 1000} for s in [100.0, 105.0]])
+        assert GEXCalculator._compute_net_gex(snap, 105.0).empty
+
+    def test_all_zero_oi_empty(self):
+        snap = pd.DataFrame([{"option_type": "C", "strike_price": s, "option_gamma": 0.05, "option_open_interest": 0} for s in [100.0, 105.0]])
+        assert GEXCalculator._compute_net_gex(snap, 105.0).empty

@@ -193,3 +193,87 @@
   Regime      : neutral
   Reason      : Bear call spread opportunity | regime=neutral | IV_rank=55 | RSI=47 | %B=0.44 | sell=625.0/buy=635.0 | delta=0.33 | net_credit=$3.42 | max_loss=$658 | R/R=0.52 | DTE=33
 ───────────────────────────────────────────────────────
+
+───────────────────────────────────────────────────────
+  📋 TRADE SIGNAL  [2026-03-23 21:50]
+───────────────────────────────────────────────────────
+  Strategy  : Bull Put Spread
+  Symbol    : US.NVDA
+  Action    : SELL TO OPEN
+
+  ── Spread Legs ──────────────────────────────
+  SELL 1 US.NVDA260424P170000  @ $4.45
+  BUY  1 US.NVDA260424P160000  @ $2.25
+  Net credit  : $2.21 / share  = $221 / contract
+
+  ── Risk ─────────────────────────────────────
+  Max profit  : $220  (if expires worthless)
+  Max loss    : $780  (if spread goes full ITM)
+  Reward/risk : 0.28×
+  Breakeven   : $167.79  (underlying at expiry)
+  Stop loss   : Close if position costs >$4.42  (2× credit)
+  Take profit : Close if position worth <$1.10  (50% profit)
+
+  ── Context ──────────────────────────────────
+  Expiry      : 2026-04-24  (32 DTE)
+  Delta       : -0.32
+  IV Rank     : 65
+  Regime      : neutral
+  Reason      : Bull put spread opportunity | regime=neutral | IV_rank=65 | RSI=44 | %B=0.25 | sell=170.0/buy=160.0 | delta=-0.32 | net_credit=$2.21 | max_loss=$780 | R/R=0.28 | DTE=32
+───────────────────────────────────────────────────────
+
+───────────────────────────────────────────────────────
+  📋 TRADE SIGNAL  [2026-03-23 22:00]
+───────────────────────────────────────────────────────
+  Strategy  : Bull Put Spread
+  Symbol    : US.NVDA
+  Action    : SELL TO OPEN
+
+  ── Spread Legs ──────────────────────────────
+  SELL 1 US.NVDA260424P170000  @ $4.25
+  BUY  1 US.NVDA260424P160000  @ $2.11
+  Net credit  : $2.14 / share  = $214 / contract
+
+  ── Risk ─────────────────────────────────────
+  Max profit  : $214  (if expires worthless)
+  Max loss    : $786  (if spread goes full ITM)
+  Reward/risk : 0.27×
+  Breakeven   : $167.86  (underlying at expiry)
+  Stop loss   : Close if position costs >$4.28  (2× credit)
+  Take profit : Close if position worth <$1.07  (50% profit)
+
+  ── Context ──────────────────────────────────
+  Expiry      : 2026-04-24  (32 DTE)
+  Delta       : -0.31
+  IV Rank     : 64
+  Regime      : neutral
+  Reason      : Bull put spread opportunity | regime=neutral | IV_rank=64 | RSI=45 | %B=0.27 | sell=170.0/buy=160.0 | delta=-0.31 | net_credit=$2.14 | max_loss=$786 | R/R=0.27 | DTE=32
+───────────────────────────────────────────────────────
+
+───────────────────────────────────────────────────────
+  📋 TRADE SIGNAL  [2026-03-23 22:00]
+───────────────────────────────────────────────────────
+  Strategy  : Bull Put Spread
+  Symbol    : US.SPY
+  Action    : SELL TO OPEN
+
+  ── Spread Legs ──────────────────────────────
+  SELL 1 US.SPY260424P646000  @ $10.46
+  BUY  1 US.SPY260424P636000  @ $8.11
+  Net credit  : $2.35 / share  = $235 / contract
+
+  ── Risk ─────────────────────────────────────
+  Max profit  : $235  (if expires worthless)
+  Max loss    : $765  (if spread goes full ITM)
+  Reward/risk : 0.31×
+  Breakeven   : $643.65  (underlying at expiry)
+  Stop loss   : Close if position costs >$4.70  (2× credit)
+  Take profit : Close if position worth <$1.18  (50% profit)
+
+  ── Context ──────────────────────────────────
+  Expiry      : 2026-04-24  (32 DTE)
+  Delta       : -0.35
+  IV Rank     : 64
+  Regime      : bull
+  Reason      : Bull put spread opportunity | regime=bull | IV_rank=64 | RSI=41 | %B=0.22 | sell=646.0/buy=636.0 | delta=-0.35 | net_credit=$2.35 | max_loss=$765 | R/R=0.31 | DTE=32
+───────────────────────────────────────────────────────

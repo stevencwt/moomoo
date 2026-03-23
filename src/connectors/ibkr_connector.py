@@ -933,6 +933,7 @@ class IBKRConnector:
         """
         self._ensure_connected()
 
+        # Check open/working orders first
         for trade in self._ib.openTrades():
             if str(trade.order.orderId) == str(order_id):
                 return {
@@ -942,6 +943,7 @@ class IBKRConnector:
                     "filled_price": float(trade.orderStatus.avgFillPrice),
                 }
 
+        # Check fills — covers orders that completed and left openTrades()
         for fill in self._ib.fills():
             if str(fill.execution.orderId) == str(order_id):
                 return {
@@ -949,6 +951,16 @@ class IBKRConnector:
                     "status":       "FILLED",
                     "filled_qty":   int(fill.execution.shares),
                     "filled_price": float(fill.execution.price),
+                }
+
+        # Also check all trades (includes completed) via trades()
+        for trade in self._ib.trades():
+            if str(trade.order.orderId) == str(order_id):
+                return {
+                    "order_id":     str(order_id),
+                    "status":       self._normalise_status(trade.orderStatus.status),
+                    "filled_qty":   int(trade.orderStatus.filled),
+                    "filled_price": float(trade.orderStatus.avgFillPrice),
                 }
 
         raise DataError(f"Order {order_id} not found")

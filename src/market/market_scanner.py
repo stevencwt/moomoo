@@ -296,5 +296,6 @@ class MarketScanner:
             logger.warning(f"{symbol}: Could not fetch IV data: {e}")
             return 0.0, 50.0
 
-    def scan_symbol_intraday(self, symbol: str, morning_context: dict = None) -> list:
-        return []
+    def scan_symbol_intraday(self, symbol: str, morning_context: dict = None):
+        """Stub — returns None so scheduler skips silently."""
+        return None

@@ -48,7 +48,7 @@ from src.logger import get_logger
 logger = get_logger("execution.order_router")
 
 # Maximum seconds to wait for a limit order to fill
-FILL_TIMEOUT_SECONDS = 60
+FILL_TIMEOUT_SECONDS = 120
 # Poll interval when waiting for fill
 POLL_INTERVAL_SECONDS = 5
 
@@ -264,7 +264,12 @@ class OrderRouter:
         logger.debug(f"Waiting for fill on order {order_id} (timeout={self._fill_timeout}s)")
 
         while time.time() < deadline:
-            status = self._connector.get_order_status(order_id)
+            try:
+                status = self._connector.get_order_status(order_id)
+            except Exception as e:
+                logger.warning(f"get_order_status error for {order_id}: {e}")
+                time.sleep(POLL_INTERVAL_SECONDS)
+                continue
 
             if not status:
                 logger.warning(f"get_order_status returned None for {order_id}")

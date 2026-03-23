@@ -1,0 +1,48 @@
+
+════════════════════════════════════════════════════════════
+  PAPER TRADING VALIDATION REPORT
+  Generated: 2026-03-20T04:30:28
+════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────
+  P&L SUMMARY
+────────────────────────────────────────────────────────────
+  Total closed trades  : 12
+  Open positions       : 0
+  Win rate             : 75.0% (9/12)
+  Total P&L            : $+1,229.50
+  Average P&L / trade  : $+102.46
+  Best trade           : $+552.00
+  Worst trade          : $-350.00
+  Avg credit collected : $3.43/share
+  Avg max risk / trade : $717
+
+────────────────────────────────────────────────────────────
+  BY STRATEGY
+────────────────────────────────────────────────────────────
+  bear_call_spread             trades=9    win=89%  P&L=$+678
+  bull_put_spread              trades=2    win=0%  P&L=$+0
+  covered_call                 trades=1    win=100%  P&L=$+552
+
+────────────────────────────────────────────────────────────
+  VALIDATION GATES
+────────────────────────────────────────────────────────────
+  ✅ PASS  Minimum trade count
+         Target: >= 10
+         Actual: 12 closed trades
+  ✅ PASS  Win rate
+         Target: >= 60%
+         Actual: 75.0% (9/12)
+  ✅ PASS  Positive expectancy
+         Target: > $0 per trade
+         Actual: $+102.46 average P&L per trade
+  ✅ PASS  Sharpe-like ratio
+         Target: >= 0.5
+         Actual: 5.99 (total_pnl / std_dev)
+  ✅ PASS  No catastrophic loss
+         Target: <= 3.0× avg max_loss
+         Actual: Worst trade: $-350 | Avg max loss: $717 | Ratio: 0.5×
+
+════════════════════════════════════════════════════════════
+  RECOMMENDATION: GO LIVE ✅
+════════════════════════════════════════════════════════════

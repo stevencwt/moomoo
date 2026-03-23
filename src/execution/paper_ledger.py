@@ -39,10 +39,11 @@ class PaperLedger:
 
     def record_open(
         self,
-        signal:    TradeSignal,
-        fill_sell: float,
-        fill_buy:  Optional[float] = None,
-        snapshot:  Optional[Any]   = None,
+        signal:     TradeSignal,
+        fill_sell:  float,
+        fill_buy:   Optional[float] = None,
+        snapshot:   Optional[Any]   = None,
+        trade_mode: str             = "paper",
     ) -> int:
         """
         Record a newly opened paper position.
@@ -91,7 +92,8 @@ class PaperLedger:
                     rsi_at_open, pct_b_at_open, macd_at_open, vix_at_open,
                     short_strike, long_strike, atm_iv_at_open,
                     theta_at_open, vega_at_open,
-                    signal_score, entry_type
+                    signal_score, entry_type,
+                    trade_mode
                 ) VALUES (
                     ?, ?, ?, ?, ?, ?,
                     ?, ?, ?,
@@ -102,7 +104,8 @@ class PaperLedger:
                     ?, ?, ?, ?,
                     ?, ?, ?,
                     ?, ?,
-                    ?, ?
+                    ?, ?,
+                    ?
                 )
             """, (
                 signal.symbol, signal.strategy_name, signal.signal_type,
@@ -120,6 +123,7 @@ class PaperLedger:
                 short_strike, long_strike, atm_iv_at_open,
                 theta_at_open, vega_at_open,
                 signal_score, entry_type,
+                trade_mode.lower(),
             ))
             trade_id = cursor.lastrowid
 
@@ -271,23 +275,36 @@ class PaperLedger:
         )
         return pnl
 
-    def get_open_trades(self) -> List[Dict]:
-        """Return all currently open paper trades with full context."""
+    def get_open_trades(self, trade_mode: Optional[str] = None) -> List[Dict]:
+        """Return open trades. Pass trade_mode='live' or 'paper' to filter."""
         with self._get_conn() as conn:
-            cursor = conn.execute(
-                "SELECT * FROM paper_trades WHERE status = 'open' ORDER BY opened_at DESC"
-            )
+            if trade_mode:
+                cursor = conn.execute(
+                    "SELECT * FROM paper_trades WHERE status = 'open' AND trade_mode = ? ORDER BY opened_at DESC",
+                    (trade_mode.lower(),)
+                )
+            else:
+                cursor = conn.execute(
+                    "SELECT * FROM paper_trades WHERE status = 'open' ORDER BY opened_at DESC"
+                )
             cols = [d[0] for d in cursor.description]
             return [dict(zip(cols, row)) for row in cursor.fetchall()]
 
-    def get_closed_trades(self) -> List[Dict]:
-        """Return all closed/expired trades ordered newest first."""
+    def get_closed_trades(self, trade_mode: Optional[str] = None) -> List[Dict]:
+        """Return closed/expired trades ordered newest first. Filterable by trade_mode."""
         with self._get_conn() as conn:
-            cursor = conn.execute("""
-                SELECT * FROM paper_trades
-                WHERE status IN ('closed', 'expired')
-                ORDER BY closed_at DESC
-            """)
+            if trade_mode:
+                cursor = conn.execute("""
+                    SELECT * FROM paper_trades
+                    WHERE status IN ('closed', 'expired') AND trade_mode = ?
+                    ORDER BY closed_at DESC
+                """, (trade_mode.lower(),))
+            else:
+                cursor = conn.execute("""
+                    SELECT * FROM paper_trades
+                    WHERE status IN ('closed', 'expired')
+                    ORDER BY closed_at DESC
+                """)
             cols = [d[0] for d in cursor.description]
             return [dict(zip(cols, row)) for row in cursor.fetchall()]
 
@@ -322,13 +339,44 @@ class PaperLedger:
             cols = [d[0] for d in cursor.description]
             return dict(zip(cols, row))
 
-    def get_statistics(self) -> Dict:
+    # Guaranteed-complete default dict — every key the dashboard template touches
+    _STATS_DEFAULTS: Dict = {
+        "total_trades":     0,
+        "winning_trades":   0,
+        "win_rate":         0.0,
+        "total_pnl":        0.0,
+        "avg_pnl":          0.0,
+        "avg_credit":       0.0,
+        "avg_max_loss":     0.0,
+        "best_trade":       0.0,
+        "worst_trade":      0.0,
+        "avg_days_held":    None,
+        "avg_dte_at_close": None,
+        "avg_pct_captured": None,
+        "avg_iv_crush":     None,
+        "avg_signal_score": None,
+        "open_count":       0,
+        "by_strategy":      {},
+        "by_close_reason":  {},
+    }
+
+    def get_statistics(self, trade_mode: Optional[str] = None) -> Dict:
         """
-        Compute validation statistics across all closed trades.
-        Includes averages of key analytics fields for strategy review.
+        Compute statistics across closed trades.
+        Pass trade_mode='live' or 'paper' to filter; None = all trades.
+        Always returns a fully-populated dict — never raises, never partial.
         """
+        try:
+            return self._get_statistics_inner(trade_mode)
+        except Exception:
+            return dict(self._STATS_DEFAULTS)
+
+    def _get_statistics_inner(self, trade_mode: Optional[str] = None) -> Dict:
+        mode_clause = "AND trade_mode = ?" if trade_mode else ""
+        mode_args   = (trade_mode.lower(),) if trade_mode else ()
+
         with self._get_conn() as conn:
-            overall = conn.execute("""
+            overall = conn.execute(f"""
                 SELECT
                     COUNT(*)                                               AS total_trades,
                     SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END)             AS winning_trades,
@@ -347,28 +395,32 @@ class PaperLedger:
                     AVG(signal_score)                                      AS avg_signal_score
                 FROM paper_trades
                 WHERE status IN ('closed', 'expired') AND pnl IS NOT NULL
-            """).fetchone()
+                {mode_clause}
+            """, mode_args).fetchone()
 
             open_count = conn.execute(
-                "SELECT COUNT(*) FROM paper_trades WHERE status = 'open'"
+                f"SELECT COUNT(*) FROM paper_trades WHERE status = 'open' {mode_clause}",
+                mode_args
             ).fetchone()[0]
 
-            by_strategy_rows = conn.execute("""
+            by_strategy_rows = conn.execute(f"""
                 SELECT strategy_name,
                        COUNT(*), SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END),
                        SUM(pnl), AVG(pnl), AVG(pct_premium_captured)
                 FROM paper_trades
                 WHERE status IN ('closed', 'expired') AND pnl IS NOT NULL
+                {mode_clause}
                 GROUP BY strategy_name
-            """).fetchall()
+            """, mode_args).fetchall()
 
-            by_reason_rows = conn.execute("""
+            by_reason_rows = conn.execute(f"""
                 SELECT close_reason,
                        COUNT(*), AVG(pnl), AVG(pct_premium_captured)
                 FROM paper_trades
                 WHERE status IN ('closed', 'expired') AND pnl IS NOT NULL
+                {mode_clause}
                 GROUP BY close_reason
-            """).fetchall()
+            """, mode_args).fetchall()
 
         total = overall[0] or 0
         wins  = overall[1] or 0
@@ -392,18 +444,18 @@ class PaperLedger:
                 "avg_pct_captured": round(row[3] or 0, 1) if row[3] is not None else None,
             }
 
-        return {
+        result = {
             "total_trades":     total,
             "winning_trades":   wins,
-            "win_rate":         (wins / total) if total > 0 else 0,
+            "win_rate":         (wins / total) if total > 0 else 0.0,
             "total_pnl":        round(overall[2] or 0, 2),
             "avg_pnl":          round(overall[3] or 0, 2),
             "avg_credit":       round(overall[4] or 0, 4),
             "avg_max_loss":     round(overall[5] or 0, 2),
             "best_trade":       round(overall[6] or 0, 2),
             "worst_trade":      round(overall[7] or 0, 2),
-            "avg_days_held":    round(overall[8], 1)  if overall[8]  is not None else None,
-            "avg_dte_at_close": round(overall[9], 1)  if overall[9]  is not None else None,
+            "avg_days_held":    round(overall[8],  1) if overall[8]  is not None else None,
+            "avg_dte_at_close": round(overall[9],  1) if overall[9]  is not None else None,
             "avg_pct_captured": round(overall[10], 1) if overall[10] is not None else None,
             "avg_iv_crush":     round(overall[11], 2) if overall[11] is not None else None,
             "avg_signal_score": round(overall[12], 4) if overall[12] is not None else None,
@@ -411,6 +463,10 @@ class PaperLedger:
             "by_strategy":      by_strategy,
             "by_close_reason":  by_close_reason,
         }
+        # Belt-and-suspenders: guarantee every key present
+        for k, v in self._STATS_DEFAULTS.items():
+            result.setdefault(k, v)
+        return result
 
     # ── Private Helpers ───────────────────────────────────────────
 
@@ -475,7 +531,8 @@ class PaperLedger:
                     buffer_at_close      REAL,
                     -- Live trading
                     commission           REAL    NOT NULL DEFAULT 0.0,
-                    pnl_net              REAL
+                    pnl_net              REAL,
+                    trade_mode           TEXT    NOT NULL DEFAULT 'paper'
                 )
             """)
             conn.execute("""
@@ -520,6 +577,7 @@ class PaperLedger:
             ("buffer_at_close",     "REAL"),
             ("commission",          "REAL DEFAULT 0.0"),
             ("pnl_net",             "REAL"),
+            ("trade_mode",          "TEXT DEFAULT 'paper'"),
         ]
         with self._get_conn() as conn:
             for col_name, col_type in columns:

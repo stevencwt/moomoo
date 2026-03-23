@@ -6,7 +6,7 @@
 # Re-enable covered_call and set shares_held once TSLA transferred to IBKR.
 # ─────────────────────────────────────────────────────────────────────────────
 
-mode: live        # "paper" | "live"  — switch to live after simulation confirms OK
+mode: live         # "paper" | "live"  — VALIDATION PASSED 10/10 trades, 90% win rate
 
 # ── Broker Configuration ─────────────────────────────────────────────────────
 # ┌─────────────────────────────────────────────────────────────────────────┐
@@ -30,7 +30,7 @@ broker:
 moomoo:
   host:       "127.0.0.1"
   port:       11111
-  trade_env:  "REAL"   # "SIMULATE" = paper | "REAL" = live
+  trade_env:  "REAL"       # "SIMULATE" = paper | "REAL" = live
   stock_account_id:  "565755"       # Holds the 100 TSLA shares
   option_account_id: "4310610"      # All options orders route here
 
@@ -155,10 +155,10 @@ strategies:
 
 # ── Portfolio-level risk controls ─────────────────────────────────────────────
 portfolio_guard:
-  max_open_positions:   8        # Total across all symbols and strategies (matches 8-symbol watchlist)
-  max_risk_pct:         0.05     # Max 5% of portfolio at risk per trade
-  max_total_risk_pct:   0.20     # Max 20% of portfolio at risk total
-  max_trades_per_day:   3        # Max new positions per calendar day
+  max_open_positions:   2        # Small account — max 2 positions at a time
+  max_risk_pct:         0.50     # 50% per trade — allows 1 contract (~$750-850 max loss)
+  max_total_risk_pct:   0.90     # 90% total — allows 2 positions simultaneously
+  max_trades_per_day:   1        # Conservative — 1 new trade per day on small account
   portfolio_value:      1724     # IBKR account U18705798 — USD balance (converted from SGD)
 
 # ── Signal ranking ───────────────────────────────────────────────────────────

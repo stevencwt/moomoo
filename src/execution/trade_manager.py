@@ -324,37 +324,50 @@ class TradeManager:
 
     def _confirm_live_trade(self, signal: TradeSignal) -> bool:
         """
-        Log full trade details for live confirmation.
-        In autonomous mode (Phase 6), this becomes a rule-based check.
-        During Phase 4/5 testing, this ALWAYS returns False to prevent
-        accidental live orders during development.
+        Autonomous live trade confirmation (Phase 6).
+        All upstream gates (PortfolioGuard, strategy, signal ranker) have
+        already passed. This is a final sanity check before order submission.
 
-        Returns:
-            True = proceed with live order
-            False = abort (safe default during development)
+        Returns True (proceed) if all sanity checks pass, False (abort) if any fail.
         """
-        logger.warning(
-            f"[LIVE CONFIRMATION REQUIRED]\n"
-            f"  Symbol:      {signal.symbol}\n"
-            f"  Strategy:    {signal.strategy_name}\n"
-            f"  Sell:        {signal.sell_contract} @ ${signal.sell_price:.2f}\n"
-            f"  Buy:         {signal.buy_contract or 'N/A'} @ "
-            f"${signal.buy_price:.2f}" if signal.buy_price else
-            f"  Buy:         N/A\n"
-            f"  Net Credit:  ${signal.net_credit:.2f}\n"
-            f"  Max Loss:    ${signal.max_loss:.0f}" if signal.max_loss else
-            f"  Max Loss:    N/A (covered)\n"
-            f"  Expiry:      {signal.expiry} (DTE={signal.dte})\n"
-            f"  Regime:      {signal.regime}\n"
-            f"  IV Rank:     {signal.iv_rank:.0f}\n"
-            f"  Delta:       {signal.delta:.2f}\n"
-            f"  Reason:      {signal.reason}\n"
-        )
+        portfolio_value = self._config.get("portfolio_guard", {}).get("portfolio_value", 0)
+        max_risk_pct    = self._config.get("portfolio_guard", {}).get("max_risk_pct", 0.5)
 
-        # SAFETY: Always returns False during phases 3-5
-        # Phase 6 will replace this with autonomous confirmation logic
-        logger.warning(
-            "Live confirmation: DECLINED (development mode — "
-            "Phase 6 implements autonomous confirmation)"
+        reasons = []
+
+        # 1. Net credit must be positive
+        if not signal.net_credit or signal.net_credit <= 0:
+            reasons.append(f"net_credit invalid: {signal.net_credit}")
+
+        # 2. Max loss must be defined and within portfolio risk limit
+        if signal.max_loss:
+            max_allowed = portfolio_value * max_risk_pct
+            if signal.max_loss > max_allowed:
+                reasons.append(
+                    f"max_loss ${signal.max_loss:.0f} exceeds limit "
+                    f"${max_allowed:.0f} ({max_risk_pct*100:.0f}% of ${portfolio_value})"
+                )
+        else:
+            reasons.append("max_loss not defined")
+
+        # 3. DTE must be within acceptable range
+        if signal.dte is not None and (signal.dte < 7 or signal.dte > 60):
+            reasons.append(f"DTE={signal.dte} outside 7-60 range")
+
+        # 4. Sell and buy contracts must both be present for spreads
+        if "spread" in signal.strategy_name and not signal.buy_contract:
+            reasons.append("spread strategy missing buy_contract")
+
+        if reasons:
+            logger.warning(
+                f"[LIVE CONFIRMATION FAILED] {signal.symbol} {signal.strategy_name} — "
+                + " | ".join(reasons)
+            )
+            return False
+
+        logger.info(
+            f"[LIVE CONFIRMATION PASSED] {signal.symbol} {signal.strategy_name} | "
+            f"credit=${signal.net_credit:.2f} | max_loss=${signal.max_loss:.0f} | "
+            f"DTE={signal.dte} | submitting to IBKR..."
         )
-        return False
+        return True
