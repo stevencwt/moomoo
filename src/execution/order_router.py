@@ -246,6 +246,78 @@ class OrderRouter:
             status     = "filled",
         )
 
+    def close_spread(
+        self,
+        trade_id:      int,
+        sell_contract: str,
+        buy_contract:  str,
+        qty:           int,
+        close_price:   float,
+        symbol:        str,
+        reason:        str,
+    ) -> float:
+        """
+        Place a buy-to-close order for an existing spread position.
+
+        Paper mode: returns close_price immediately (no broker call).
+        Live mode:  places SELL combo via connector, polls for fill.
+
+        Args:
+            trade_id:      PaperLedger trade ID (for logging)
+            sell_contract: OCC code for the original short leg
+            buy_contract:  OCC code for the original long leg
+            qty:           Number of spreads
+            close_price:   Net debit per share (mark price estimate)
+            symbol:        Underlying symbol (for logging)
+            reason:        Close reason (for logging)
+
+        Returns:
+            Actual fill price (debit per share). In paper mode, equals close_price.
+
+        Raises:
+            OrderError: If live order placement or fill fails.
+        """
+        if self._is_paper:
+            logger.info(
+                f"[PAPER CLOSE] #{trade_id} {symbol} {reason} | "
+                f"debit=${close_price:.2f}"
+            )
+            return close_price
+
+        logger.warning(
+            f"[LIVE CLOSE] #{trade_id} {symbol} {reason} | "
+            f"THIS IS A REAL MONEY CLOSE ORDER | "
+            f"debit=${close_price:.2f}"
+        )
+
+        order_id = self._connector.place_combo_close_order(
+            sell_contract=sell_contract,
+            buy_contract=buy_contract,
+            qty=qty,
+            net_debit=close_price,
+        )
+
+        if not order_id:
+            raise OrderError(
+                f"Failed to place close order for trade #{trade_id}"
+            )
+
+        fill = self._wait_for_fill(order_id, close_price)
+
+        if fill["status"] != "filled":
+            self._connector.cancel_order(order_id)
+            raise OrderError(
+                f"Close order {order_id} for trade #{trade_id} not filled "
+                f"within {self._fill_timeout}s. Cancelled."
+            )
+
+        actual_price = fill["avg_price"]
+        logger.info(
+            f"[LIVE CLOSE] #{trade_id} {symbol} filled | "
+            f"debit=${actual_price:.2f} | reason={reason}"
+        )
+        return actual_price
+
     def _wait_for_fill(
         self,
         order_id: str,

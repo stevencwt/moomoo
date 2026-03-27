@@ -266,7 +266,18 @@ class TradeManager:
         commission:          float = 0.0,
     ) -> float:
         """
-        Close an existing paper trade.
+        Close an existing trade — places broker order (live mode) then records in ledger.
+
+        Live mode flow:
+          1. Look up trade record for contract details
+          2. Place buy-to-close order via OrderRouter (skipped for expired_worthless)
+          3. Record close in PaperLedger (using actual fill price if available)
+          4. Update PortfolioGuard
+
+        Paper mode: steps 1-2 skipped, goes straight to ledger.
+
+        If the broker order fails in live mode, the close is still recorded in
+        the ledger to prevent ghost positions that re-trigger exits every cycle.
 
         Args:
             trade_id:             PaperLedger trade ID
@@ -286,9 +297,42 @@ class TradeManager:
         Returns:
             Realised gross P&L in dollars.
         """
+        actual_close_price = close_price
+
+        # ── Live mode: place real buy-to-close order first ──────
+        if not self._is_paper and close_reason != "expired_worthless":
+            trade = self._ledger.get_trade(trade_id)
+            if trade and trade.get("buy_contract"):
+                # Spread position — close via combo order
+                try:
+                    actual_close_price = self._router.close_spread(
+                        trade_id      = trade_id,
+                        sell_contract = trade["sell_contract"],
+                        buy_contract  = trade["buy_contract"],
+                        qty           = trade.get("quantity", 1),
+                        close_price   = close_price,
+                        symbol        = symbol,
+                        reason        = close_reason,
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"[LIVE CLOSE FAILED] Order placement failed for "
+                        f"#{trade_id} {symbol}: {e} — recording close at "
+                        f"mark price ${close_price:.2f}, verify in TWS"
+                    )
+                    # Fall through to ledger recording to avoid ghost positions
+            elif trade and not trade.get("buy_contract"):
+                # Single-leg position (covered call) — not currently active
+                logger.warning(
+                    f"[LIVE CLOSE] #{trade_id} {symbol}: single-leg close "
+                    f"not implemented — recording in ledger only, close "
+                    f"manually in TWS"
+                )
+
+        # ── Record close in ledger ──────────────────────────────
         pnl = self._ledger.record_close(
             trade_id,
-            close_price,
+            actual_close_price,
             close_reason,
             spot_price_at_close = spot_price_at_close,
             dte_at_close        = dte_at_close,

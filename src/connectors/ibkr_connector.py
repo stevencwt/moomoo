@@ -907,6 +907,98 @@ class IBKRConnector:
         logger.info(f"Combo order placed | id={order_id} | status={trade.orderStatus.status}")
         return order_id
 
+    def place_combo_close_order(
+        self,
+        sell_contract: str,
+        buy_contract:  str,
+        qty:           int,
+        net_debit:     float,
+    ) -> str:
+        """
+        Close an existing two-leg credit spread.
+
+        IBKR combo close convention:
+          The combo leg structure (SELL/BUY actions) stays THE SAME as the
+          open order — do NOT reverse the leg actions. What changes:
+            1. openClose = 2 (CLOSE) on both legs instead of 1 (OPEN)
+            2. Combo-level action = SELL (opposite of BUY used at open)
+            3. Limit price = positive net_debit (opposite of negative credit)
+
+          Open:  BUY  combo @ -credit  (legs: SELL short + BUY long, openClose=1)
+          Close: SELL combo @ +debit   (legs: SELL short + BUY long, openClose=2)
+
+          IBKR nets the position because the combo definition matches and the
+          combo-level SELL offsets the original BUY. Reversing leg actions
+          would create a NEW opposite position instead of closing.
+
+        Args:
+            sell_contract: OCC code for the original short leg
+            buy_contract : OCC code for the original long leg
+            qty          : Number of spreads
+            net_debit    : Net debit per share to close
+
+        Returns:
+            Order ID string.
+        """
+        self._ensure_connected()
+        self._guard_live_mode("place_combo_close_order")
+
+        logger.info(
+            f"Placing combo close: "
+            f"SELL {sell_contract} + BUY {buy_contract} (same legs as open) | "
+            f"openClose=CLOSE | qty={qty} | debit=${net_debit:.2f} | "
+            f"order=SELL @ ${net_debit:.2f}"
+        )
+
+        sell_c = self._code_to_contract(sell_contract)
+        buy_c  = self._code_to_contract(buy_contract)
+        self._ib.qualifyContracts(sell_c, buy_c)
+
+        # Build BAG contract — SAME leg structure as open order
+        combo          = Contract()
+        combo.symbol   = sell_c.symbol
+        combo.secType  = "BAG"
+        combo.currency = "USD"
+        combo.exchange = "SMART"
+
+        # Legs keep the same SELL/BUY actions as the open order.
+        # Only openClose changes: 1 (OPEN) → 2 (CLOSE).
+        leg1              = ComboLeg()
+        leg1.conId        = sell_c.conId
+        leg1.ratio        = 1
+        leg1.action       = "SELL"     # same as open — NOT reversed
+        leg1.exchange     = "SMART"
+        leg1.openClose    = 2          # 2=CLOSE (was 1=OPEN at open)
+
+        leg2              = ComboLeg()
+        leg2.conId        = buy_c.conId
+        leg2.ratio        = 1
+        leg2.action       = "BUY"      # same as open — NOT reversed
+        leg2.exchange     = "SMART"
+        leg2.openClose    = 2          # 2=CLOSE (was 1=OPEN at open)
+
+        combo.comboLegs = [leg1, leg2]
+
+        # Combo-level: SELL at positive price = pay debit to close.
+        # This is the mirror of open (BUY at negative price = collect credit).
+        order = LimitOrder(
+            action="SELL",
+            totalQuantity=qty,
+            lmtPrice=round(abs(net_debit), 2),
+            tif="DAY",
+            account=self._account,
+        )
+
+        trade    = self._ib.placeOrder(combo, order)
+        self._ib.sleep(1.0)
+
+        order_id = str(trade.order.orderId)
+        logger.info(
+            f"Combo close order placed | id={order_id} | "
+            f"status={trade.orderStatus.status}"
+        )
+        return order_id
+
     def cancel_order(self, order_id: str) -> bool:
         """Cancel an open order. Returns True if cancelled."""
         self._ensure_connected()
