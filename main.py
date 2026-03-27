@@ -188,6 +188,155 @@ def run_close_trade(config: dict) -> None:
 
 
 
+def run_close_trade_live(config: dict) -> None:
+    """
+    Close an open position through the full execution pipeline:
+    TradeManager.close_trade() → OrderRouter.close_spread() → IBKRConnector
+
+    Unlike --close-trade (which only records in the ledger), this places a
+    real buy-to-close order in IBKR when mode=live.
+    """
+    from src.connectors.broker_factory import build_connectors
+    from src.execution.paper_ledger import PaperLedger
+    from src.execution.portfolio_guard import PortfolioGuard
+    from src.execution.order_router import OrderRouter
+    from src.execution.trade_manager import TradeManager
+
+    print("\n" + "=" * 60)
+    print("  CLOSE TRADE — LIVE EXECUTION PIPELINE")
+    print("=" * 60)
+    print(f"  Mode: {config.get('mode', 'paper')}")
+
+    if config.get("mode") != "live":
+        print("\n  WARNING: mode is not 'live' — broker order will be simulated (paper).")
+
+    # Wire up using the same factory as BotScheduler.build()
+    data_connector, exec_connector = build_connectors(config)
+
+    ledger  = PaperLedger(config.get("paper_ledger", {}).get(
+        "db_path", "data/paper_trades.db"
+    ))
+    guard   = PortfolioGuard(config)
+    guard.restore_from_ledger(ledger)
+    router  = OrderRouter(config, exec_connector)
+    manager = TradeManager(config, guard, router, ledger)
+
+    # List open positions
+    open_trades = ledger.get_open_trades()
+    if not open_trades:
+        print("\n  No open positions to close.\n")
+        return
+
+    print(f"\n  Open positions ({len(open_trades)}):")
+    for i, t in enumerate(open_trades, 1):
+        strikes = ""
+        if t.get("short_strike") and t.get("long_strike"):
+            strikes = f"  {t['short_strike']:.0f}/{t['long_strike']:.0f}"
+        print(
+            f"    [{i}] #{t['id']}  {t['symbol']:<10} {t['strategy_name']:<20}"
+            f"{strikes}  credit=${t['net_credit']:.2f}  expiry={t['expiry']}"
+        )
+
+    # Select trade
+    print()
+    try:
+        choice = int(input("  Select position number to close: ").strip())
+    except (ValueError, EOFError):
+        print("  Aborted.")
+        return
+
+    if choice < 1 or choice > len(open_trades):
+        print(f"  Invalid choice. Must be 1-{len(open_trades)}.")
+        return
+
+    trade = open_trades[choice - 1]
+    trade_id = trade["id"]
+
+    # Get close price
+    print(f"\n  Selected: #{trade_id} {trade['symbol']} {trade['strategy_name']}")
+    print(f"  Sell contract: {trade['sell_contract']}")
+    print(f"  Buy contract:  {trade.get('buy_contract', 'N/A')}")
+    print(f"  Net credit:    ${trade['net_credit']:.2f}")
+
+    # Try fetching live price via data connector
+    live_price = None
+    try:
+        contracts = [trade["sell_contract"]]
+        if trade.get("buy_contract"):
+            contracts.append(trade["buy_contract"])
+        snap = data_connector.get_option_snapshot(contracts)
+        if snap is not None and len(snap) > 0:
+            sell_row = snap[snap["code"] == trade["sell_contract"]]
+            if len(sell_row) > 0:
+                sell_mid = float(sell_row.iloc[0].get("mid_price",
+                    sell_row.iloc[0].get("ask_price", 0)))
+                if trade.get("buy_contract"):
+                    buy_row = snap[snap["code"] == trade["buy_contract"]]
+                    if len(buy_row) > 0:
+                        buy_mid = float(buy_row.iloc[0].get("mid_price",
+                            buy_row.iloc[0].get("bid_price", 0)))
+                        live_price = max(0.0, sell_mid - buy_mid)
+                else:
+                    live_price = sell_mid
+    except Exception as e:
+        logger.warning(f"Could not fetch live price: {e}")
+
+    if live_price is not None:
+        print(f"  Live mark:     ${live_price:.2f}")
+        use_live = input(f"  Use live price ${live_price:.2f}? (yes/no): ").strip().lower()
+        if use_live == "yes":
+            close_price = live_price
+        else:
+            close_price = float(input("  Enter close price (debit per share): ").strip())
+    else:
+        print("  Live price unavailable.")
+        close_price = float(input("  Enter close price (debit per share): ").strip())
+
+    # Select close reason
+    print(f"\n  Close price: ${close_price:.2f}")
+    print("  Close reasons: manual, stop_loss, take_profit, dte_close, regime_shift")
+    reason = input("  Close reason [manual]: ").strip() or "manual"
+
+    # Final confirmation
+    expected_pnl = (trade["net_credit"] - close_price) * 100 * trade.get("quantity", 1)
+    print(f"\n  {'!' * 50}")
+    print(f"  CONFIRM: Close #{trade_id} {trade['symbol']}")
+    print(f"    Debit:         ${close_price:.2f}")
+    print(f"    Reason:        {reason}")
+    print(f"    Expected P&L:  ${expected_pnl:+.2f}")
+    if config.get("mode") == "live":
+        print(f"    IBKR ORDER:    YES — real buy-to-close will be placed")
+    else:
+        print(f"    IBKR ORDER:    NO (paper mode)")
+    print(f"  {'!' * 50}")
+
+    answer = input("\n  Type 'yes' to execute: ").strip().lower()
+    if answer != "yes":
+        print("  Aborted.")
+        return
+
+    # Execute through full pipeline
+    print(f"\n  Executing close via TradeManager → OrderRouter → IBKR...")
+    pnl = manager.close_trade(
+        trade_id=trade_id,
+        close_price=close_price,
+        close_reason=reason,
+        symbol=trade["symbol"],
+        strategy_name=trade["strategy_name"],
+    )
+
+    print(f"\n  {'=' * 50}")
+    action = "PROFIT" if pnl > 0 else "LOSS"
+    print(f"  Trade #{trade_id} CLOSED | {action} | P&L=${pnl:+.2f}")
+    print(f"  {'=' * 50}")
+    print()
+    print("  Verification steps:")
+    print("    1. IBKR TWS → Activity → Trades tab: check for closing order")
+    print("    2. IBKR TWS → Portfolio tab: NVDA position should be gone")
+    print("    3. python3 main.py --status: confirm 0 open positions")
+    print()
+
+
 def run_reset_ledger(config: dict) -> None:
     """
     Clear all open positions from the paper ledger.
@@ -303,6 +452,12 @@ def main():
         help="Record a manually closed position into the paper ledger"
     )
     parser.add_argument(
+        "--close-trade-live",
+        action="store_true",
+        dest="close_trade_live",
+        help="Close a position through the full execution pipeline (places real IBKR order in live mode)"
+    )
+    parser.add_argument(
         "--reset-ledger",
         action="store_true",
         dest="reset_ledger",
@@ -328,6 +483,8 @@ def main():
         run_record_trade(config)
     elif args.close_trade:
         run_close_trade(config)
+    elif args.close_trade_live:
+        run_close_trade_live(config)
     elif args.reset_ledger:
         run_reset_ledger(config)
     else:

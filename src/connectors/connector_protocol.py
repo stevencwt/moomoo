@@ -112,7 +112,7 @@ class BrokerConnector(Protocol):
             symbol: Bot format e.g. "US.TSLA"
 
         Returns:
-            Current price as float.
+            Current price as float. Raises DataError if unavailable.
         """
         ...
 
@@ -124,18 +124,6 @@ class BrokerConnector(Protocol):
 
         Returns:
             Dict with keys: net_liquidation, cash, currency
-        """
-        ...
-
-    def get_spot_price(self, symbol: str) -> float:
-        """
-        Return current spot price for a symbol.
-
-        Args:
-            symbol: Bot format e.g. "US.TSLA"
-
-        Returns:
-            Current price as float. Raises DataError if unavailable.
         """
         ...
 
@@ -209,6 +197,27 @@ class BrokerConnector(Protocol):
             buy_contract:  Contract code to buy (long leg / hedge)
             qty:           Number of spreads
             net_credit:    Target net credit for the spread
+
+        Returns:
+            Order ID string.
+        """
+        ...
+
+    def place_combo_close_order(
+        self,
+        sell_contract: str,
+        buy_contract:  str,
+        qty:           int,
+        net_debit:     float,
+    ) -> str:
+        """
+        Close an existing two-leg spread position.
+
+        Args:
+            sell_contract: Contract code for the original short leg
+            buy_contract:  Contract code for the original long leg
+            qty:           Number of spreads
+            net_debit:     Net debit per share to close
 
         Returns:
             Order ID string.

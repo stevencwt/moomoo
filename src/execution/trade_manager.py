@@ -299,10 +299,21 @@ class TradeManager:
         """
         actual_close_price = close_price
 
+        # ── Double-close guard ──────────────────────────────────
+        trade = self._ledger.get_trade(trade_id)
+        if not trade:
+            logger.error(f"[CLOSE] Trade #{trade_id} not found in ledger")
+            return 0.0
+        if trade.get("status") != "open":
+            logger.warning(
+                f"[CLOSE] Trade #{trade_id} already {trade.get('status')} "
+                f"— skipping duplicate close (reason={close_reason})"
+            )
+            return trade.get("pnl", 0.0) or 0.0
+
         # ── Live mode: place real buy-to-close order first ──────
         if not self._is_paper and close_reason != "expired_worthless":
-            trade = self._ledger.get_trade(trade_id)
-            if trade and trade.get("buy_contract"):
+            if trade.get("buy_contract"):
                 # Spread position — close via combo order
                 try:
                     actual_close_price = self._router.close_spread(
@@ -321,13 +332,24 @@ class TradeManager:
                         f"mark price ${close_price:.2f}, verify in TWS"
                     )
                     # Fall through to ledger recording to avoid ghost positions
-            elif trade and not trade.get("buy_contract"):
-                # Single-leg position (covered call) — not currently active
-                logger.warning(
-                    f"[LIVE CLOSE] #{trade_id} {symbol}: single-leg close "
-                    f"not implemented — recording in ledger only, close "
-                    f"manually in TWS"
-                )
+            else:
+                # Single-leg position (covered call) — buy back the short leg
+                try:
+                    actual_close_price = self._router.close_single_leg(
+                        trade_id      = trade_id,
+                        sell_contract = trade["sell_contract"],
+                        qty           = trade.get("quantity", 1),
+                        close_price   = close_price,
+                        symbol        = symbol,
+                        reason        = close_reason,
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"[LIVE CLOSE FAILED] Single-leg close failed for "
+                        f"#{trade_id} {symbol}: {e} — recording close at "
+                        f"mark price ${close_price:.2f}, verify in TWS"
+                    )
+                    # Fall through to ledger recording to avoid ghost positions
 
         # ── Record close in ledger ──────────────────────────────
         pnl = self._ledger.record_close(

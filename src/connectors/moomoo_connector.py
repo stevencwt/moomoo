@@ -545,6 +545,26 @@ class MooMooConnector:
 
         return sell_order_id
 
+    def place_combo_close_order(
+        self,
+        sell_contract: str,
+        buy_contract:  str,
+        qty:           int,
+        net_debit:     float,
+    ) -> str:
+        """
+        Close an existing two-leg spread position.
+
+        Not implemented for MooMoo — execution broker is IBKR.
+        This stub prevents AttributeError if OrderRouter.close_spread()
+        is called with a MooMoo connector.
+        """
+        raise NotImplementedError(
+            "place_combo_close_order() is not implemented for MooMooConnector. "
+            "Spread closes require IBKR (config: broker.execution: ibkr). "
+            f"Trade contracts: {sell_contract}/{buy_contract}"
+        )
+
     def cancel_order(self, order_id: str) -> bool:
         """
         Cancel an open order.
